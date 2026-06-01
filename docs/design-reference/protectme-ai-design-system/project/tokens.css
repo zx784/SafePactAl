@@ -1,0 +1,293 @@
+/* =============================================================================
+   ProtectMe AI — Design Tokens
+   Single source of truth. Components reference these vars, never raw hex.
+   "Understand before you sign. Ask before you agree."
+   ============================================================================= */
+
+:root {
+  /* ---------------------------------------------------------------------------
+     COLOR — NAVY BASE SCALE (the dark canvas everything floats on)
+     --------------------------------------------------------------------------- */
+  --navy-950: #070B16; /* deepest — page edges, scrim */
+  --navy-900: #0B1124; /* app background base */
+  --navy-850: #0F1730; /* raised background sections */
+  --navy-800: #141E3B; /* elevated panels on dark */
+  --navy-700: #1E2A4F; /* hairline borders / muted dark surface */
+  --navy-600: #2A3A66; /* dark-surface borders, dividers */
+  --navy-500: #3B4D7A; /* disabled strokes on dark */
+
+  /* ---------------------------------------------------------------------------
+     COLOR — SURFACES
+     Surfaces are white/near-white cards floating on the navy base.
+     --------------------------------------------------------------------------- */
+  --surface-base:      #0B1124; /* the dark canvas */
+  --surface-raised:    #0F1730; /* a slightly lifted dark region */
+  --surface-card:      #FFFFFF; /* the floating white card */
+  --surface-card-soft: #F7F9FC; /* muted near-white inset (clause text, wells) */
+  --surface-muted:     #EEF2F8; /* muted fills, skeletons, track */
+  --surface-overlay:   rgba(7, 11, 22, 0.62); /* modal/sheet scrim */
+  --surface-glass:     rgba(15, 23, 48, 0.72); /* blurred dark glass */
+
+  /* ---------------------------------------------------------------------------
+     COLOR — TEXT
+     Two contexts: ON DARK (the canvas) and ON CARD (white surfaces).
+     --------------------------------------------------------------------------- */
+  /* on the navy canvas */
+  --text-on-dark:        #F4F7FC;
+  --text-on-dark-2:      #B7C2DC; /* secondary on dark */
+  --text-on-dark-muted:  #7E8CAE; /* muted/caption on dark */
+  /* on white cards */
+  --text-primary:        #0E1730; /* ink */
+  --text-secondary:      #4A5570; /* secondary body */
+  --text-muted:          #818BA3; /* captions, meta, placeholder */
+  --text-inverse:        #FFFFFF; /* on dark fills inside a card */
+  --text-on-accent:      #FFFFFF; /* on the brand gradient / solid */
+  --text-link:           #3D63E6;
+
+  /* ---------------------------------------------------------------------------
+     COLOR — BRAND / PRIMARY  (blue → indigo → violet, used SPARINGLY)
+     --------------------------------------------------------------------------- */
+  --brand-blue:   #4D7CFE;
+  --brand-indigo: #6366F1;
+  --brand-violet: #8B5CF6;
+  --brand-solid:        #5B6EF5; /* solid fallback for the gradient */
+  --brand-solid-hover:  #4A5CE0;
+  --brand-solid-active: #3F50C9;
+  --brand-soft:         #EEF1FE; /* tint background on white cards */
+  --brand-soft-border:  #C9D2FB;
+  --brand-on:           #FFFFFF;
+  --gradient-brand:  linear-gradient(135deg, #4D7CFE 0%, #6366F1 52%, #8B5CF6 100%);
+  --gradient-hero:   radial-gradient(120% 120% at 50% 0%, #1A2550 0%, #0B1124 60%);
+  --gradient-voice:  conic-gradient(from 140deg, #4D7CFE, #8B5CF6, #22C7D6, #4D7CFE);
+
+  /* ---------------------------------------------------------------------------
+     COLOR — SEMANTIC RISK SEVERITY  (consistent everywhere; AA verified)
+     High = red, Medium = amber, Low = green.
+     Each: solid / soft bg (badge) / border / on-soft text (AA on soft bg).
+     --------------------------------------------------------------------------- */
+  /* HIGH — red */
+  --risk-high:            #E5484D;
+  --risk-high-soft:       #FDECEC;
+  --risk-high-border:     #F6BFC0;
+  --risk-high-text:       #B42318; /* AA on --risk-high-soft & white */
+  --risk-high-on:         #FFFFFF;
+  /* MEDIUM — amber */
+  --risk-med:             #E8910C;
+  --risk-med-soft:        #FEF3DC;
+  --risk-med-border:      #F6D38A;
+  --risk-med-text:        #9A5B05; /* AA on --risk-med-soft & white */
+  --risk-med-on:          #3A2706;
+  /* LOW — green */
+  --risk-low:             #1FA463;
+  --risk-low-soft:        #E4F6EC;
+  --risk-low-border:      #A9E3C2;
+  --risk-low-text:        #0C7A45; /* AA on --risk-low-soft & white */
+  --risk-low-on:          #FFFFFF;
+
+  /* ---------------------------------------------------------------------------
+     COLOR — STATE (feedback / alerts)
+     --------------------------------------------------------------------------- */
+  --state-success:       #1FA463;
+  --state-success-soft:  #E4F6EC;
+  --state-success-text:  #0C7A45;
+  --state-warning:       #E8910C;
+  --state-warning-soft:  #FEF3DC;
+  --state-warning-text:  #9A5B05;
+  --state-error:         #E5484D;
+  --state-error-soft:    #FDECEC;
+  --state-error-text:    #B42318;
+  --state-info:          #3D63E6;
+  --state-info-soft:     #EAEFFE;
+  --state-info-text:     #2B47B8;
+
+  /* ---------------------------------------------------------------------------
+     COLOR — VOICE AGENT STATES (distinct hues from severity)
+     --------------------------------------------------------------------------- */
+  --voice-idle:        #8593B0; /* slate — at rest */
+  --voice-listening:   #4D7CFE; /* blue — capturing you */
+  --voice-thinking:    #8B5CF6; /* violet — reasoning */
+  --voice-speaking:    #22C7D6; /* cyan — agent talking */
+  --voice-tool:        #E8910C; /* amber — running a tool */
+  --voice-draft:       #1FA463; /* green — draft ready */
+  --voice-ended:       #7E8CAE; /* muted — call ended */
+  --voice-error:       #E5484D; /* red — error */
+
+  /* ---------------------------------------------------------------------------
+     TYPOGRAPHY
+     --------------------------------------------------------------------------- */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+
+  /* sizes (rem @16px base) */
+  --fs-display: 3.5rem;   /* 56 */
+  --fs-h1:      2.5rem;    /* 40 */
+  --fs-h2:      2rem;      /* 32 */
+  --fs-h3:      1.5rem;    /* 24 */
+  --fs-h4:      1.25rem;   /* 20 */
+  --fs-body-lg: 1.125rem;  /* 18 */
+  --fs-body:    1rem;      /* 16 */
+  --fs-body-sm: 0.875rem;  /* 14 */
+  --fs-caption: 0.8125rem; /* 13 */
+  --fs-code:    0.8125rem; /* 13 */
+
+  /* line-heights */
+  --lh-display: 1.05;
+  --lh-heading: 1.15;
+  --lh-snug:    1.35;
+  --lh-body:    1.6;
+  --lh-code:    1.55;
+
+  /* weights */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-extra:    800;
+
+  /* letter-spacing */
+  --ls-tight:   -0.02em;
+  --ls-snug:    -0.01em;
+  --ls-normal:   0em;
+  --ls-wide:     0.02em;
+  --ls-caps:     0.06em;  /* eyebrows / overlines */
+
+  /* ---------------------------------------------------------------------------
+     SPACING — 4px base
+     --------------------------------------------------------------------------- */
+  --space-0:  0;
+  --space-1:  0.25rem;  /* 4  */
+  --space-2:  0.5rem;   /* 8  */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 */
+  --space-5:  1.25rem;  /* 20 */
+  --space-6:  1.5rem;   /* 24 */
+  --space-8:  2rem;     /* 32 */
+  --space-10: 2.5rem;   /* 40 */
+  --space-12: 3rem;     /* 48 */
+  --space-16: 4rem;     /* 64 */
+  --space-20: 5rem;     /* 80 */
+  --space-24: 6rem;     /* 96 */
+
+  /* ---------------------------------------------------------------------------
+     RADII — generous, soft, friendly
+     --------------------------------------------------------------------------- */
+  --radius-xs:  6px;
+  --radius-sm:  10px;
+  --radius-md:  14px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;   /* cards */
+  --radius-2xl: 32px;   /* hero / large panels */
+  --radius-pill: 999px; /* pills, badges, voice circle */
+
+  /* ---------------------------------------------------------------------------
+     SHADOWS / ELEVATION — soft, low-contrast, navy-tinted
+     --------------------------------------------------------------------------- */
+  --shadow-xs: 0 1px 2px rgba(8, 14, 32, 0.06);
+  --shadow-sm: 0 2px 8px rgba(8, 14, 32, 0.07);
+  --shadow-md: 0 8px 24px rgba(8, 14, 32, 0.10);
+  --shadow-lg: 0 16px 40px rgba(8, 14, 32, 0.14);
+  --shadow-xl: 0 28px 64px rgba(8, 14, 32, 0.20);
+  --shadow-card: 0 10px 34px rgba(8, 14, 32, 0.12);
+  --shadow-focus: 0 0 0 3px rgba(91, 110, 245, 0.40);
+  --glow-brand: 0 0 48px rgba(99, 102, 241, 0.45);
+  --glow-voice: 0 0 60px rgba(77, 124, 254, 0.50);
+
+  /* ---------------------------------------------------------------------------
+     BORDERS
+     --------------------------------------------------------------------------- */
+  --border-hairline: 1px;
+  --border-regular:  1.5px;
+  --border-strong:   2px;
+  --border-card:     rgba(14, 23, 48, 0.08); /* on white card */
+  --border-soft:     rgba(14, 23, 48, 0.06);
+  --border-on-dark:  rgba(255, 255, 255, 0.10);
+
+  /* ---------------------------------------------------------------------------
+     Z-INDEX LAYERS
+     --------------------------------------------------------------------------- */
+  --z-base:     0;
+  --z-sticky:   100;
+  --z-dropdown: 1000;
+  --z-banner:   1150;
+  --z-overlay:  1200;
+  --z-sheet:    1250;
+  --z-modal:    1300;
+  --z-toast:    1400;
+  --z-tooltip:  1500;
+
+  /* ---------------------------------------------------------------------------
+     BREAKPOINTS (mobile-first) — for reference in JS / container queries
+     --------------------------------------------------------------------------- */
+  --bp-sm:  640px;
+  --bp-md:  768px;
+  --bp-lg:  1024px;
+  --bp-xl:  1280px;
+  --bp-2xl: 1536px;
+
+  /* layout */
+  --container-max: 1200px;
+  --content-max:   760px;
+
+  /* ---------------------------------------------------------------------------
+     MOTION — durations + easings + named transitions
+     --------------------------------------------------------------------------- */
+  --dur-instant: 80ms;
+  --dur-fast:    140ms;
+  --dur-base:    220ms;
+  --dur-slow:    320ms;
+  --dur-slower:  480ms;
+
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);  /* decelerate in */
+  --ease-exit:     cubic-bezier(0.4, 0, 1, 1);      /* accelerate out */
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1); /* gentle overshoot */
+
+  /* named transitions */
+  --t-hover:    color var(--dur-fast) var(--ease-standard),
+                background-color var(--dur-fast) var(--ease-standard),
+                border-color var(--dur-fast) var(--ease-standard),
+                box-shadow var(--dur-fast) var(--ease-standard),
+                transform var(--dur-fast) var(--ease-standard);
+  --t-expand:   max-height var(--dur-slow) var(--ease-entrance),
+                opacity var(--dur-base) var(--ease-standard);
+  --t-panel:    transform var(--dur-slow) var(--ease-entrance),
+                opacity var(--dur-base) var(--ease-standard);
+}
+
+/* =============================================================================
+   THEME MAPPING
+   The product runs DARK by default (navy canvas). White cards are explicit
+   surfaces. A .theme-light region can flip the canvas tokens if ever needed.
+   ============================================================================= */
+:root,
+.theme-dark {
+  color-scheme: dark;
+  --app-bg:        var(--surface-base);
+  --app-bg-raised: var(--surface-raised);
+  --app-fg:        var(--text-on-dark);
+  --app-fg-2:      var(--text-on-dark-2);
+  --app-fg-muted:  var(--text-on-dark-muted);
+  --app-border:    var(--border-on-dark);
+}
+
+/* A light canvas variant (e.g. print, embedded report export). */
+.theme-light {
+  color-scheme: light;
+  --app-bg:        #F4F7FC;
+  --app-bg-raised: #FFFFFF;
+  --app-fg:        var(--text-primary);
+  --app-fg-2:      var(--text-secondary);
+  --app-fg-muted:  var(--text-muted);
+  --app-border:    var(--border-card);
+}
+
+/* Reduced motion: collapse durations, hold final frame of looping anims. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms;
+    --dur-fast:    1ms;
+    --dur-base:    1ms;
+    --dur-slow:    1ms;
+    --dur-slower:  1ms;
+  }
+}

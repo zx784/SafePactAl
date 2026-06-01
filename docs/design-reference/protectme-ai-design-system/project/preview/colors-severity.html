@@ -1,0 +1,37 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .sev { display:grid; grid-template-columns: 92px repeat(3,1fr); gap:8px; align-items:stretch; }
+  .sev .head { font:700 12px/1 var(--font-sans); display:flex; align-items:center; }
+  .cell { border-radius:10px; padding:9px 10px; min-height:46px; display:flex; flex-direction:column; justify-content:center; gap:3px; box-sizing:border-box;}
+  .cell .t { font:600 11px/1.1 var(--font-sans); }
+  .cell .h { font:600 10px/1.1 var(--font-mono); opacity:.85; }
+  .colhead { font:700 10px/1 var(--font-sans); letter-spacing:.05em; text-transform:uppercase; color:#818BA3; text-align:center; padding-bottom:2px;}
+</style>
+</head><body><div class="card on-light">
+  <div class="label on-light" style="margin-bottom:12px;">Risk severity — solid · soft badge · border · AA text</div>
+  <div class="sev" style="margin-bottom:6px;">
+    <div></div><div class="colhead">Solid</div><div class="colhead">Soft + text</div><div class="colhead">Border</div>
+  </div>
+  <div class="sev" style="margin-bottom:8px;">
+    <div class="head" style="color:#B42318;">● High</div>
+    <div class="cell" style="background:#E5484D;"><span class="t" style="color:#fff">High</span><span class="h" style="color:#fff">#E5484D</span></div>
+    <div class="cell" style="background:#FDECEC;"><span class="t" style="color:#B42318">High risk</span><span class="h" style="color:#B42318">#B42318</span></div>
+    <div class="cell" style="background:#fff;border:1.5px solid #F6BFC0;"><span class="t" style="color:#B42318">border</span><span class="h" style="color:#818BA3">#F6BFC0</span></div>
+  </div>
+  <div class="sev" style="margin-bottom:8px;">
+    <div class="head" style="color:#9A5B05;">● Medium</div>
+    <div class="cell" style="background:#E8910C;"><span class="t" style="color:#fff">Medium</span><span class="h" style="color:#fff">#E8910C</span></div>
+    <div class="cell" style="background:#FEF3DC;"><span class="t" style="color:#9A5B05">Medium risk</span><span class="h" style="color:#9A5B05">#9A5B05</span></div>
+    <div class="cell" style="background:#fff;border:1.5px solid #F6D38A;"><span class="t" style="color:#9A5B05">border</span><span class="h" style="color:#818BA3">#F6D38A</span></div>
+  </div>
+  <div class="sev">
+    <div class="head" style="color:#0C7A45;">● Low</div>
+    <div class="cell" style="background:#1FA463;"><span class="t" style="color:#fff">Low</span><span class="h" style="color:#fff">#1FA463</span></div>
+    <div class="cell" style="background:#E4F6EC;"><span class="t" style="color:#0C7A45">Low risk</span><span class="h" style="color:#0C7A45">#0C7A45</span></div>
+    <div class="cell" style="background:#fff;border:1.5px solid #A9E3C2;"><span class="t" style="color:#0C7A45">border</span><span class="h" style="color:#818BA3">#A9E3C2</span></div>
+  </div>
+</div></body></html>

@@ -1,0 +1,139 @@
+/* =============================================================================
+   ProtectMe AI — UI Kit styles (beyond tokens.css / colors_and_type.css)
+   Everything references tokens; no raw hex except inside gradients already
+   defined as tokens.
+   ============================================================================= */
+
+html, body { height: 100%; }
+#root { min-height: 100vh; }
+button { font-family: var(--font-sans); }
+
+/* ----------------------------------------------------------------------------
+   App shell / background
+   ---------------------------------------------------------------------------- */
+.app {
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 90% at 50% -10%, #182250 0%, rgba(11,17,36,0) 55%),
+    var(--surface-base);
+  color: var(--text-on-dark);
+}
+.wrap { max-width: var(--container-max); margin: 0 auto; padding: 0 24px; }
+.wrap-narrow { max-width: 920px; margin: 0 auto; padding: 0 24px; }
+
+/* ----------------------------------------------------------------------------
+   Top navigation
+   ---------------------------------------------------------------------------- */
+.nav {
+  position: sticky; top: 0; z-index: var(--z-sticky);
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-on-dark);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--gradient-brand);
+  display: grid; place-items: center;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+}
+.brand-mark svg { width: 19px; height: 19px; color: #fff; }
+.brand-name { font-weight: var(--fw-bold); font-size: 17px; letter-spacing: -0.01em; }
+.brand-name em { font-style: normal; color: var(--brand-blue); }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-link {
+  font-size: 14px; font-weight: var(--fw-medium); color: var(--text-on-dark-2);
+  padding: 8px 12px; border-radius: 10px; background: none; border: none; cursor: pointer;
+  transition: var(--t-hover);
+}
+.nav-link:hover { color: var(--text-on-dark); background: rgba(255,255,255,0.05); }
+
+/* ----------------------------------------------------------------------------
+   Buttons
+   ---------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 14px; font-weight: var(--fw-semibold); line-height: 1;
+  border-radius: var(--radius-md); padding: 12px 18px;
+  border: 1.5px solid transparent; cursor: pointer; white-space: nowrap;
+  transition: var(--t-hover); min-height: 44px;
+}
+.btn svg { width: 17px; height: 17px; flex: none; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.btn-sm { padding: 8px 13px; min-height: 36px; font-size: 13px; border-radius: var(--radius-sm); }
+.btn-lg { padding: 15px 24px; min-height: 52px; font-size: 16px; border-radius: var(--radius-lg); }
+
+.btn-primary { background: var(--gradient-brand); color: var(--text-on-accent); box-shadow: 0 6px 18px rgba(99,102,241,0.35); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(99,102,241,0.45); }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-secondary { background: #fff; color: var(--text-primary); border-color: #E2E7F0; }
+.btn-secondary:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+/* secondary on dark canvas */
+.btn-secondary.on-dark { background: rgba(255,255,255,0.06); color: var(--text-on-dark); border-color: var(--border-on-dark); }
+.btn-secondary.on-dark:hover { background: rgba(255,255,255,0.10); }
+
+.btn-ghost { background: none; color: var(--text-on-dark-2); }
+.btn-ghost:hover { background: rgba(255,255,255,0.06); color: var(--text-on-dark); }
+.btn-ghost.on-light { color: var(--text-secondary); }
+.btn-ghost.on-light:hover { background: var(--surface-muted); color: var(--text-primary); }
+
+.btn-destructive { background: var(--risk-high-soft); color: var(--risk-high-text); border-color: var(--risk-high-border); }
+.btn-destructive:hover { background: #FCDDDD; }
+
+.btn-icon { padding: 0; width: 42px; height: 42px; border-radius: var(--radius-sm); }
+.btn-block { width: 100%; }
+
+/* ----------------------------------------------------------------------------
+   Pills / badges
+   ---------------------------------------------------------------------------- */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: var(--fw-bold); line-height: 1;
+  border-radius: var(--radius-pill); padding: 6px 12px 6px 10px;
+  border: 1.5px solid transparent;
+}
+.pill svg { width: 14px; height: 14px; }
+.pill-high { background: var(--risk-high-soft); color: var(--risk-high-text); border-color: var(--risk-high-border); }
+.pill-medium { background: var(--risk-med-soft); color: var(--risk-med-text); border-color: var(--risk-med-border); }
+.pill-low { background: var(--risk-low-soft); color: var(--risk-low-text); border-color: var(--risk-low-border); }
+
+/* ----------------------------------------------------------------------------
+   Cards
+   ---------------------------------------------------------------------------- */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+.card-soft { background: var(--surface-card-soft); border-radius: var(--radius-md); }
+
+/* ----------------------------------------------------------------------------
+   Disclaimer banner (persistent)
+   ---------------------------------------------------------------------------- */
+.disclaimer {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-on-dark);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+.disclaimer svg { width: 17px; height: 17px; color: var(--text-on-dark-2); flex: none; }
+.disclaimer span { font-size: 12.5px; line-height: 1.45; color: var(--text-on-dark-2); }
+
+/* ----------------------------------------------------------------------------
+   Scrollbars (subtle)
+   ---------------------------------------------------------------------------- */
+.scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+.scroll-light::-webkit-scrollbar-thumb { background: rgba(14,23,48,0.16); }
+
+/* utility */
+.muted { color: var(--text-on-dark-muted); }
+.eyebrow { font-size: 13px; font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); text-transform: uppercase; }
+.sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }

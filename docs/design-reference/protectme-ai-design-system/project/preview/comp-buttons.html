@@ -1,0 +1,31 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .btn{display:inline-flex;align-items:center;gap:8px;font:600 14px var(--font-sans);border-radius:14px;padding:11px 18px;border:1.5px solid transparent;cursor:pointer;transition:var(--t-hover);}
+  .btn svg{width:17px;height:17px;}
+  .btn-primary{background:var(--gradient-brand);color:#fff;box-shadow:0 6px 18px rgba(99,102,241,.35);}
+  .btn-secondary{background:#fff;color:#0E1730;border-color:#E2E7F0;}
+  .btn-ghost{background:transparent;color:#B7C2DC;}
+  .btn-destructive{background:#FDECEC;color:#B42318;border-color:#F6BFC0;}
+  .btn-icon{padding:11px;border-radius:12px;background:#141E3B;color:#B7C2DC;border-color:rgba(255,255,255,.08);}
+</style>
+</head><body><div class="card">
+  <div class="label" style="margin-bottom:14px;">Buttons</div>
+  <div class="row">
+    <button class="btn btn-primary"><i data-lucide="upload-cloud"></i>Upload contract</button>
+    <button class="btn btn-secondary"><i data-lucide="copy"></i>Copy</button>
+    <button class="btn btn-ghost">Text instead</button>
+    <button class="btn btn-destructive"><i data-lucide="phone-off"></i>End call</button>
+    <button class="btn btn-icon"><i data-lucide="refresh-cw"></i></button>
+  </div>
+  <div class="row" style="margin-top:14px;align-items:center;">
+    <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;"><i data-lucide="sparkles"></i>Generate message</button>
+    <button class="btn btn-primary" style="opacity:.5;cursor:not-allowed;box-shadow:none;">Disabled</button>
+    <span class="mono" style="color:#7E8CAE;font-size:11px;">primary · secondary · ghost · destructive · icon</span>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script><script>lucide.createIcons();</script>
+</body></html>

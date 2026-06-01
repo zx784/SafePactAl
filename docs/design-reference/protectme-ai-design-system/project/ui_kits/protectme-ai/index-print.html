@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" class="theme-dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProtectMe AI — Design (print)</title>
+  <link rel="stylesheet" href="../../tokens.css">
+  <link rel="stylesheet" href="../../colors_and_type.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="screens.css">
+  <style>
+    /* ---- Print document layout (static, paged) ---- */
+    html, body { height: auto; background: var(--surface-base); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #root { min-height: 0; }
+
+    .print-doc { }
+    .print-screen {
+      width: 1040px; margin: 0 auto; padding: 28px 0 40px;
+      break-after: page;
+    }
+    .print-screen:last-child { break-after: auto; }
+    .print-screen > .seclabel {
+      display: flex; align-items: center; gap: 10px;
+      font: 700 12px/1 var(--font-sans); letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-on-dark-muted); padding: 0 24px 16px;
+    }
+    .print-screen > .seclabel .n { font-family: var(--font-mono); color: var(--brand-blue); }
+
+    /* Landing renders in normal flow */
+    .print-screen .landing { padding-top: 24px; }
+
+    /* Dashboard → static, no inner scroll, non-sticky bar, all cards expanded */
+    .dash-print { height: auto !important; }
+    .dash-print .dash-scroll { overflow: visible !important; height: auto !important; }
+    .dash-print .dash-inner { max-width: 1000px; padding-top: 8px; }
+    .dash-print .actionbar { position: static !important; background: var(--navy-850); margin-top: 16px; border-radius: var(--radius-lg); }
+    .riskcard { break-inside: avoid; }
+
+    /* Panels → static blocks side by side */
+    .print-screen.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; padding-left: 24px; padding-right: 24px; }
+    .print-screen .panel {
+      position: static !important; height: auto !important; width: 100% !important;
+      border: 1px solid var(--border-card); border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card); animation: none !important; break-inside: avoid;
+    }
+    .print-screen .voicepanel { border-color: var(--border-on-dark); }
+    .print-screen .panel-body { overflow: visible !important; }
+    .print-screen .transcript { overflow: visible !important; height: auto !important; max-height: none !important; }
+    .print-screen .draft textarea { min-height: 0; height: auto; }
+
+    /* Header */
+    .print-head { display: flex; align-items: center; justify-content: space-between; width: 1040px; margin: 0 auto; padding: 24px 24px 8px; }
+    .print-head .brand { display: flex; align-items: center; gap: 10px; }
+    .print-head .brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--gradient-brand); display: grid; place-items: center; box-shadow: 0 4px 14px rgba(99,102,241,0.4); }
+    .print-head .brand-mark svg { width: 19px; height: 19px; color: #fff; }
+    .print-head .brand-name { font-weight: 700; font-size: 17px; letter-spacing: -0.01em; color: var(--text-on-dark); }
+    .print-head .brand-name em { font-style: normal; color: var(--brand-blue); }
+    .print-head .tag { font-size: 13px; color: var(--text-on-dark-muted); }
+
+    /* kill looping animations in print */
+    * { animation-iteration-count: 1 !important; }
+
+    @page { size: landscape; margin: 0.5cm; }
+    @media print {
+      html, body { background: var(--surface-base) !important; }
+      .print-screen, .print-head, .dash-print .dash-inner { width: 100%; }
+      .vring { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+  <script>
+    var useState = React.useState, useEffect = React.useEffect, useLayoutEffect = React.useLayoutEffect,
+        useRef = React.useRef, useCallback = React.useCallback, useMemo = React.useMemo;
+  </script>
+
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="ui.jsx"></script>
+  <script type="text/babel" src="Landing.jsx"></script>
+  <script type="text/babel" src="RiskCard.jsx"></script>
+  <script type="text/babel" src="Dashboard.jsx"></script>
+  <script type="text/babel" src="MessagePanel.jsx"></script>
+  <script type="text/babel" src="VoicePanel.jsx"></script>
+
+  <script type="text/babel">
+    const noop = () => {};
+    function PrintHead() {
+      return (
+        <div className="print-head">
+          <div className="brand">
+            <span className="brand-mark"><Icon name="shield-check" size={19} /></span>
+            <span className="brand-name">Protect<em>Me</em> AI</span>
+          </div>
+          <span className="tag">Design system · screen reference</span>
+        </div>
+      );
+    }
+
+    function PrintApp() {
+      return (
+        <div className="print-doc">
+          {/* Page 1 — Landing / Upload */}
+          <section className="print-screen">
+            <PrintHead />
+            <div className="seclabel"><span className="n">01</span> Landing &amp; upload</div>
+            <Landing onUpload={noop} />
+          </section>
+
+          {/* Page 2 — Risk report dashboard (all risks expanded) */}
+          <section className="print-screen">
+            <div className="seclabel"><span className="n">02</span> Risk report dashboard</div>
+            <Dashboard
+              printMode
+              selected={new Set(["r1", "r2"])}
+              onSelect={noop} onAsk={noop} onGenerate={noop}
+              onCallAgent={noop} onGenerateSelected={noop}
+              panelOpen={false}
+              terminalLines={[
+                { kind: "agent", text: "report ready · 8 risks detected" },
+                { kind: "tool", text: "risk.classify() → 3 high · 3 medium · 2 low" },
+                { kind: "agent", text: "sorted high → medium → low" },
+              ]}
+            />
+          </section>
+
+          {/* Page 3 — Message generator + Voice agent */}
+          <section className="print-screen panels">
+            <div className="seclabel" style={{ gridColumn: "1 / -1" }}><span className="n">03</span> Message generator &amp; voice agent</div>
+            <MessagePanel printMode risks={[RISKS[0]]} onClose={noop} />
+            <VoicePanel printMode contextRisk={RISKS[0]} onClose={noop} onLog={noop} />
+          </section>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<PrintApp />);
+
+    // Auto-print once fonts, icons, and layout have settled.
+    (function () {
+      function go() {
+        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+          .then(() => setTimeout(() => window.print(), 800));
+      }
+      if (document.readyState === "complete") go();
+      else window.addEventListener("load", go);
+    })();
+  </script>
+</body>
+</html>

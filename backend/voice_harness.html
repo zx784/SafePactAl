@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProtectMe AI — Voice Test Harness</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 { font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+    .subtitle { font-size: 0.8rem; color: #64748b; margin-bottom: 24px; }
+
+    .panel {
+      background: #1e2330;
+      border: 1px solid #2d3548;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    input[type="text"], select, textarea {
+      background: #0f1117;
+      border: 1px solid #2d3548;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: #6366f1; }
+    input[type="text"].wide { flex: 1; min-width: 0; }
+    textarea { width: 100%; resize: vertical; min-height: 80px; font-family: inherit; }
+
+    button {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, opacity .15s;
+    }
+    button:hover { background: #4f46e5; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    button.secondary { background: #374151; }
+    button.secondary:hover { background: #4b5563; }
+
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      background: #1e2330;
+      border: 1px solid #2d3548;
+      color: #64748b;
+    }
+    .status-badge.connected { background: #052e16; border-color: #16a34a; color: #4ade80; }
+    .status-badge.thinking  { background: #1e1b4b; border-color: #6366f1; color: #a5b4fc; }
+    .status-badge.speaking  { background: #083344; border-color: #0ea5e9; color: #38bdf8; }
+    .status-badge.tool_running { background: #1c1917; border-color: #f59e0b; color: #fbbf24; }
+    .status-badge.draft_ready  { background: #052e16; border-color: #22c55e; color: #86efac; }
+    .status-badge.error        { background: #450a0a; border-color: #dc2626; color: #fca5a5; }
+
+    #log {
+      height: 280px;
+      overflow-y: auto;
+      background: #0a0c12;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+    }
+
+    .log-entry { padding: 1px 0; }
+    .log-ts    { color: #475569; margin-right: 6px; }
+    .log-user  { color: #a78bfa; }
+    .log-sentence { color: #e2e8f0; }
+    .log-status   { color: #64748b; }
+    .log-debug    { color: #475569; }
+    .log-draft    { color: #4ade80; }
+    .log-tool     { color: #fbbf24; }
+    .log-error    { color: #f87171; }
+
+    #draftBox {
+      background: #0a0c12;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #94a3b8;
+      min-height: 60px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .hint { font-size: 0.7rem; color: #475569; margin-top: 8px; }
+    .no-sr { color: #64748b; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+
+<h1>ProtectMe AI — Voice Test Harness</h1>
+<p class="subtitle">Phase 5 · Minimal browser test only · Not the production UI</p>
+
+<!-- ── 1. Connection ──────────────────────────────────────────────────────── -->
+<div class="panel">
+  <div class="panel-title">Connection</div>
+  <div class="row" style="margin-bottom:10px">
+    <input type="text" id="serverUrl"  value="ws://localhost:8001" style="width:220px" />
+    <input type="text" id="sessionId" class="wide" placeholder="session-id  (paste from /api/contracts/analyze response)" />
+    <button id="btnConnect" onclick="connect()">Connect</button>
+    <button id="btnDisconnect" class="danger" onclick="disconnect()" disabled>Disconnect</button>
+    <span id="statusBadge" class="status-badge">Disconnected</span>
+  </div>
+  <div class="row" style="gap:6px">
+    <textarea id="contractText" placeholder="Or paste sample contract text here and click 'Analyze' to get a session ID …"></textarea>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input type="text" id="backendUrl" value="http://localhost:8001" style="width:220px" />
+    <button onclick="analyzeContract()">Analyze → get session ID</button>
+    <span id="analyzeStatus" style="font-size:.75rem;color:#64748b"></span>
+  </div>
+</div>
+
+<!-- ── 2. Voice / Text input ──────────────────────────────────────────────── -->
+<div class="panel">
+  <div class="panel-title">Input</div>
+  <div class="row">
+    <input type="text" id="msgInput" class="wide" placeholder="Type a message and press Enter …" onkeydown="if(event.key==='Enter')sendText()" />
+    <button id="btnSend" onclick="sendText()" disabled>Send</button>
+    <button id="btnListen" onclick="toggleListening()" class="secondary" title="Browser SpeechRecognition">🎙 Listen</button>
+    <button onclick="stopSpeech()" class="secondary">⏹ Stop</button>
+  </div>
+  <p id="srStatus" class="hint"></p>
+</div>
+
+<!-- ── 3. Voice selector ──────────────────────────────────────────────────── -->
+<div class="panel">
+  <div class="panel-title">Speech Output</div>
+  <div class="row">
+    <label style="font-size:.8rem;color:#94a3b8">Voice:</label>
+    <select id="voiceSelect" style="flex:1;max-width:380px"></select>
+    <label style="font-size:.8rem;color:#94a3b8">Rate:</label>
+    <input type="range" id="rateRange" min="0.5" max="2" step="0.1" value="1" style="width:80px" />
+    <span id="rateLabel" style="font-size:.75rem;color:#94a3b8">1.0×</span>
+  </div>
+  <p id="speechNote" class="hint"></p>
+</div>
+
+<!-- ── 4. Event log ───────────────────────────────────────────────────────── -->
+<div class="panel">
+  <div class="panel-title">Event Log <button onclick="clearLog()" class="secondary" style="padding:2px 8px;font-size:.7rem;margin-left:8px">Clear</button></div>
+  <div id="log"></div>
+</div>
+
+<!-- ── 5. Draft ready ─────────────────────────────────────────────────────── -->
+<div class="panel" id="draftPanel" style="display:none">
+  <div class="panel-title">Draft Ready</div>
+  <div id="draftBox"></div>
+  <div class="row" style="margin-top:10px">
+    <button onclick="copyDraft()" class="secondary">Copy Draft</button>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+
+let ws = null;
+let speechQueue = [];
+let isSpeaking = false;
+let recognition = null;
+let isListening = false;
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+
+function connect() {
+  const serverUrl = document.getElementById('serverUrl').value.trim();
+  const sessionId = document.getElementById('sessionId').value.trim();
+  if (!sessionId) { alert('Enter a session ID first.'); return; }
+
+  ws = new WebSocket(`${serverUrl}/ws/voice/${sessionId}`);
+
+  ws.onopen = () => {
+    setStatus('connected', 'Connected');
+    document.getElementById('btnConnect').disabled = true;
+    document.getElementById('btnDisconnect').disabled = false;
+    document.getElementById('btnSend').disabled = false;
+  };
+
+  ws.onmessage = e => handleMessage(JSON.parse(e.data));
+
+  ws.onclose = () => {
+    setStatus('', 'Disconnected');
+    document.getElementById('btnConnect').disabled = false;
+    document.getElementById('btnDisconnect').disabled = true;
+    document.getElementById('btnSend').disabled = true;
+    ws = null;
+  };
+
+  ws.onerror = () => logEntry('error', 'WebSocket connection error');
+}
+
+function disconnect() {
+  if (ws) { ws.close(); ws = null; }
+  stopSpeech();
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'sentence':
+      logEntry('sentence', '🗣 ' + msg.text);
+      enqueueSpeech(msg.text);
+      break;
+    case 'status':
+      setStatus(msg.state, msg.state + (msg.label ? ' — ' + msg.label : ''));
+      logEntry('status', '[status] ' + msg.state + (msg.label ? ' — ' + msg.label : ''));
+      break;
+    case 'debug':
+      logEntry('debug', '[dbg] ' + msg.log);
+      break;
+    case 'tool_result':
+      logEntry('tool', '[tool] ' + msg.tool + ' → ' + JSON.stringify(msg.result).slice(0, 80));
+      break;
+    case 'draft_ready':
+      logEntry('draft', '[draft] Ready — ' + msg.draft.slice(0, 60) + '…');
+      document.getElementById('draftBox').textContent = msg.draft;
+      document.getElementById('draftPanel').style.display = 'block';
+      break;
+    case 'error':
+      logEntry('error', '[error] ' + msg.message);
+      setStatus('error', 'Error');
+      break;
+  }
+}
+
+// ── Text send ─────────────────────────────────────────────────────────────────
+
+function sendText() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text || !ws) return;
+  stopSpeech();  // cancel ongoing speech before new response
+  ws.send(JSON.stringify({ type: 'text_input', text }));
+  logEntry('user', '▶ You: ' + text);
+  input.value = '';
+}
+
+// ── Speech synthesis ──────────────────────────────────────────────────────────
+
+function enqueueSpeech(text) {
+  if (!('speechSynthesis' in window)) return;
+  speechQueue.push(text);
+  if (!isSpeaking) speakNext();
+}
+
+function speakNext() {
+  if (!speechQueue.length) { isSpeaking = false; return; }
+  isSpeaking = true;
+  const text = speechQueue.shift();
+  const utt = new SpeechSynthesisUtterance(text);
+
+  const voiceSelect = document.getElementById('voiceSelect');
+  const voices = speechSynthesis.getVoices();
+  if (voiceSelect.value) {
+    utt.voice = voices.find(v => v.name === voiceSelect.value) || null;
+  }
+
+  utt.rate = parseFloat(document.getElementById('rateRange').value);
+  utt.onend = () => speakNext();
+  utt.onerror = () => speakNext();
+  speechSynthesis.speak(utt);
+}
+
+function stopSpeech() {
+  speechQueue = [];
+  isSpeaking = false;
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+}
+
+function populateVoices() {
+  const sel = document.getElementById('voiceSelect');
+  const voices = speechSynthesis.getVoices();
+  sel.innerHTML = '<option value="">Default Voice</option>' +
+    voices.map(v => `<option value="${v.name}">${v.name} (${v.lang})</option>`).join('');
+}
+
+document.getElementById('rateRange').addEventListener('input', e => {
+  document.getElementById('rateLabel').textContent = parseFloat(e.target.value).toFixed(1) + '×';
+});
+
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = populateVoices;
+  populateVoices();
+  document.getElementById('speechNote').textContent = 'speechSynthesis available ✓';
+} else {
+  document.getElementById('speechNote').textContent =
+    'speechSynthesis not available — sentences will be shown in the log only.';
+}
+
+// ── SpeechRecognition ─────────────────────────────────────────────────────────
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+if (!SR) {
+  document.getElementById('srStatus').textContent =
+    'SpeechRecognition not available in this browser. Use text input.';
+  document.getElementById('btnListen').disabled = true;
+}
+
+function toggleListening() {
+  if (isListening) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  if (!SR) return;
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('btnListen').textContent = '⏸ Stop Listening';
+    document.getElementById('srStatus').textContent = 'Listening…';
+  };
+
+  recognition.onresult = e => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById('msgInput').value = transcript;
+    logEntry('user', '[mic] Transcript: ' + transcript);
+    sendText();
+  };
+
+  recognition.onerror = e => {
+    logEntry('error', '[mic] SpeechRecognition error: ' + e.error);
+    stopListening();
+  };
+
+  recognition.onend = () => stopListening();
+
+  recognition.start();
+}
+
+function stopListening() {
+  isListening = false;
+  document.getElementById('btnListen').textContent = '🎙 Listen';
+  document.getElementById('srStatus').textContent = '';
+  if (recognition) { try { recognition.stop(); } catch(_) {} recognition = null; }
+}
+
+// ── Analyze contract → get session ID ────────────────────────────────────────
+
+async function analyzeContract() {
+  const text = document.getElementById('contractText').value.trim();
+  if (!text) { alert('Paste some contract text first.'); return; }
+
+  const backendUrl = document.getElementById('backendUrl').value.trim();
+  const statusEl = document.getElementById('analyzeStatus');
+  statusEl.textContent = 'Analyzing…';
+
+  const form = new FormData();
+  form.append('text', text);
+
+  try {
+    const resp = await fetch(`${backendUrl}/api/contracts/analyze`, {
+      method: 'POST', body: form,
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || resp.statusText);
+
+    const sessionId = data.session_id;
+    document.getElementById('sessionId').value = sessionId;
+    statusEl.textContent = `✓ Session: ${sessionId.slice(0, 8)}…  (${data.risk_report?.risks?.length ?? 0} risks)`;
+    logEntry('status', 'Session created: ' + sessionId);
+  } catch (err) {
+    statusEl.textContent = '✗ ' + err.message;
+    logEntry('error', 'Analyze failed: ' + err.message);
+  }
+}
+
+// ── Draft copy ────────────────────────────────────────────────────────────────
+
+function copyDraft() {
+  const text = document.getElementById('draftBox').textContent;
+  navigator.clipboard.writeText(text).then(() => logEntry('status', 'Draft copied to clipboard.'));
+}
+
+// ── Log helpers ───────────────────────────────────────────────────────────────
+
+function logEntry(type, text) {
+  const log = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
+  div.innerHTML =
+    `<span class="log-ts">${ts}</span>` +
+    `<span class="log-${type}">${escHtml(text)}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+}
+
+function setStatus(cls, label) {
+  const badge = document.getElementById('statusBadge');
+  badge.className = 'status-badge' + (cls ? ' ' + cls : '');
+  badge.textContent = label;
+}
+</script>
+</body>
+</html>

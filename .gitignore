@@ -1,0 +1,96 @@
+# ============================================================
+# Environment — NEVER commit .env files with real keys
+# ============================================================
+.env
+*.env
+# Next.js / local override env files (e.g. frontend/.env.local)
+.env.local
+.env*.local
+*.env.local
+!.env.example
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+pip-wheel-metadata/
+
+# ============================================================
+# Node / Frontend
+# ============================================================
+node_modules/
+.next/
+.nuxt/
+out/
+dist/
+.cache/
+.parcel-cache/
+*.tsbuildinfo
+.pnp.js
+
+# ============================================================
+# Testing & Coverage
+# ============================================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+junit*.xml
+
+# ============================================================
+# IDEs
+# ============================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ============================================================
+# Logs & temp
+# ============================================================
+*.log
+logs/
+uploads/
+tmp/
+.tmp/
+
+# ============================================================
+# Secrets & keys (extra safety net)
+# ============================================================
+*.pem
+*.key
+*.p12
+secrets/
+.secrets/
+*service-account*.json
+*-credentials.json

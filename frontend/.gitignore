@@ -1,0 +1,21 @@
+# Next.js / Node — frontend
+node_modules/
+/.next/
+/out/
+/build/
+*.tsbuildinfo
+next-env.d.ts.timestamp
+
+# Local env files — NEVER commit (kept local only)
+.env
+.env.local
+.env*.local
+
+# Debug / logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS
+.DS_Store

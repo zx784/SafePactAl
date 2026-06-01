@@ -1,0 +1,33 @@
+# ProtectMe AI — Backend Dependencies
+# Install: pip install -r requirements.txt
+
+# ── Web framework ──────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+
+# ── Validation & settings ─────────────────────────────────
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+
+# ── Google AI Studio (official SDK — NOT google-generativeai) ─
+google-genai>=0.8.0
+
+# ── Google Cloud TTS (Phase 8C — Journey voice, ~300ms latency) ──
+# Requires GOOGLE_APPLICATION_CREDENTIALS env var pointing to service account JSON.
+google-cloud-texttospeech>=2.16.0
+
+# ── PDF extraction ────────────────────────────────────────
+PyMuPDF>=1.24.0
+
+# ── HTTP & file uploads ───────────────────────────────────
+httpx>=0.27.0
+python-multipart>=0.0.12
+
+# ── Environment ───────────────────────────────────────────
+python-dotenv>=1.0.0
+
+# ── Testing ───────────────────────────────────────────────
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+httpx>=0.27.0       # also used as async test client
+websockets>=12.0   # used by the manual e2e voice WebSocket scripts

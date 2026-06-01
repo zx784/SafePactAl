@@ -1,0 +1,30 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .stage{display:flex;align-items:center;justify-content:center;gap:48px;padding:8px 0;}
+  .vc{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;}
+  .core{width:96px;height:96px;border-radius:50%;background:var(--gradient-voice);box-shadow:var(--glow-voice);animation:breathe 3s ease-in-out infinite;}
+  .ring{position:absolute;inset:12px;border-radius:50%;border:2px solid #4D7CFE;animation:pulse 2.2s var(--ease-standard) infinite;}
+  .ring:nth-child(2){animation-delay:.7s;}
+  .ring:nth-child(3){animation-delay:1.4s;}
+  @keyframes pulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.7);opacity:0}}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  .cap{font:600 12px var(--font-sans);color:#B7C2DC;text-align:center;margin-top:14px;}
+</style>
+</head><body><div class="card">
+  <div class="label" style="margin-bottom:6px;">Signature voice circle — listening</div>
+  <div class="stage">
+    <div style="text-align:center;">
+      <div class="vc"><span class="ring"></span><span class="ring"></span><span class="ring"></span><div class="core"></div></div>
+      <div class="cap" style="color:#4D7CFE;">● Listening</div>
+    </div>
+    <div style="text-align:center;">
+      <div class="vc"><div class="core" style="width:80px;height:80px;background:#8593B0;box-shadow:none;animation:none;opacity:.85;"></div></div>
+      <div class="cap" style="color:#8593B0;">● Idle</div>
+    </div>
+  </div>
+</div>
+</body></html>

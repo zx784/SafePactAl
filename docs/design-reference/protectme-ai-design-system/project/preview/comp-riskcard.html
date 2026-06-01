@@ -1,0 +1,35 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .rc{background:#fff;border:1px solid rgba(14,23,48,.08);border-left:4px solid #E5484D;border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:14px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;font:700 12px var(--font-sans);border-radius:999px;padding:5px 11px;background:#FDECEC;color:#B42318;}
+  .pill svg{width:14px;height:14px;}
+  .rc h4{color:#0E1730;font-size:16px;}
+  .rc p{color:#818BA3;font:400 13px/1.4 var(--font-sans);margin-top:2px;}
+  .chev{margin-left:auto;color:#818BA3;}
+  .chev svg{width:20px;height:20px;}
+</style>
+</head><body><div class="card on-light">
+  <div class="label on-light" style="margin-bottom:12px;">Risk card — collapsed preview (click target expands)</div>
+  <div class="rc">
+    <span class="pill"><i data-lucide="shield-alert"></i>High</span>
+    <div style="min-width:0;">
+      <h4>Automatic renewal &amp; price increase</h4>
+      <p>This contract renews on its own and the price can rise after year one.</p>
+    </div>
+    <span class="chev"><i data-lucide="chevron-down"></i></span>
+  </div>
+  <div class="rc" style="border-left-color:#1FA463;margin-top:10px;">
+    <span class="pill" style="background:#E4F6EC;color:#0C7A45;"><i data-lucide="check-circle"></i>Low</span>
+    <div style="min-width:0;">
+      <h4>Standard governing law</h4>
+      <p>Common clause — sets which region's law applies. Usually fine.</p>
+    </div>
+    <span class="chev"><i data-lucide="chevron-down"></i></span>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script><script>lucide.createIcons();</script>
+</body></html>

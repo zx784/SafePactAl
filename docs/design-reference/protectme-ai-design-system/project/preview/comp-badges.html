@@ -1,0 +1,30 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .pill{display:inline-flex;align-items:center;gap:6px;font:700 13px var(--font-sans);border-radius:999px;padding:6px 13px 6px 11px;border:1.5px solid;}
+  .pill svg{width:15px;height:15px;}
+  .high{background:#FDECEC;color:#B42318;border-color:#F6BFC0;}
+  .med{background:#FEF3DC;color:#9A5B05;border-color:#F6D38A;}
+  .low{background:#E4F6EC;color:#0C7A45;border-color:#A9E3C2;}
+  .solid{display:inline-flex;align-items:center;gap:6px;font:700 13px var(--font-sans);border-radius:999px;padding:6px 13px;color:#fff;}
+  .solid svg{width:15px;height:15px;}
+</style>
+</head><body><div class="card on-light">
+  <div class="label on-light" style="margin-bottom:14px;">Severity badges — color + icon + label (never color alone)</div>
+  <div class="row" style="margin-bottom:14px;">
+    <span class="pill high"><i data-lucide="shield-alert"></i>High risk</span>
+    <span class="pill med"><i data-lucide="alert-circle"></i>Medium risk</span>
+    <span class="pill low"><i data-lucide="check-circle"></i>Low risk</span>
+  </div>
+  <div class="row">
+    <span class="solid" style="background:#E5484D;"><i data-lucide="shield-alert"></i>High</span>
+    <span class="solid" style="background:#E8910C;"><i data-lucide="alert-circle"></i>Medium</span>
+    <span class="solid" style="background:#1FA463;"><i data-lucide="check-circle"></i>Low</span>
+    <span class="solid" style="background:#EEF2F8;color:#4A5570;"><i data-lucide="circle"></i>All</span>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script><script>lucide.createIcons();</script>
+</body></html>

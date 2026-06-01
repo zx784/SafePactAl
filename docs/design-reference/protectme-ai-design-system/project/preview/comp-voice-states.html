@@ -1,0 +1,28 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .vs{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:8px 14px 8px 10px;font:600 13px var(--font-sans);color:#F4F7FC;}
+  .vs .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .vs svg{width:15px;height:15px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  @keyframes bp{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.4}}
+  .live{animation:bp 1.4s ease-in-out infinite;}
+</style>
+</head><body><div class="card">
+  <div class="label" style="margin-bottom:14px;">Voice state indicator — color + icon + label</div>
+  <div class="grid">
+    <div class="vs"><span class="dot" style="background:#8593B0"></span><i data-lucide="mic"></i>Idle</div>
+    <div class="vs"><span class="dot live" style="background:#4D7CFE"></span><i data-lucide="mic"></i>Listening</div>
+    <div class="vs"><span class="dot" style="background:#8B5CF6"></span><i data-lucide="sparkles"></i>Thinking</div>
+    <div class="vs"><span class="dot live" style="background:#22C7D6"></span><i data-lucide="audio-lines"></i>Speaking</div>
+    <div class="vs"><span class="dot" style="background:#E8910C"></span><i data-lucide="wrench"></i>Tool running</div>
+    <div class="vs"><span class="dot" style="background:#1FA463"></span><i data-lucide="file-check"></i>Draft ready</div>
+    <div class="vs"><span class="dot" style="background:#7E8CAE"></span><i data-lucide="phone-off"></i>Call ended</div>
+    <div class="vs"><span class="dot" style="background:#E5484D"></span><i data-lucide="alert-octagon"></i>Error</div>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script><script>lucide.createIcons();</script>
+</body></html>

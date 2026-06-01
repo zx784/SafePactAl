@@ -1,0 +1,30 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .tabs{display:inline-flex;background:#fff;border:1px solid rgba(14,23,48,.08);border-radius:999px;padding:4px;gap:2px;box-shadow:var(--shadow-xs);}
+  .tab{display:inline-flex;align-items:center;gap:6px;font:600 13px var(--font-sans);color:#4A5570;border-radius:999px;padding:8px 14px;border:none;background:none;cursor:pointer;}
+  .tab.active{background:#0E1730;color:#fff;}
+  .tab .dot{width:8px;height:8px;border-radius:50%;}
+  .tab .ct{font:700 11px var(--font-mono);opacity:.7;}
+  .search{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid rgba(14,23,48,.08);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow-xs);max-width:320px;}
+  .search svg{width:17px;height:17px;color:#818BA3;}
+  .search input{border:none;outline:none;font:400 14px var(--font-sans);color:#0E1730;width:100%;background:none;}
+</style>
+</head><body><div class="card on-light">
+  <div class="label on-light" style="margin-bottom:12px;">Filter tabs &amp; search</div>
+  <div class="tabs" style="margin-bottom:14px;">
+    <button class="tab active">All <span class="ct">12</span></button>
+    <button class="tab"><span class="dot" style="background:#E5484D"></span>High <span class="ct">3</span></button>
+    <button class="tab"><span class="dot" style="background:#E8910C"></span>Medium <span class="ct">5</span></button>
+    <button class="tab"><span class="dot" style="background:#1FA463"></span>Low <span class="ct">4</span></button>
+  </div>
+  <div class="search">
+    <i data-lucide="search"></i>
+    <input value="auto-renewal" readonly>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script><script>lucide.createIcons();</script>
+</body></html>

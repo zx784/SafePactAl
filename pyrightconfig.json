@@ -1,0 +1,16 @@
+{
+  "pythonVersion": "3.13",
+  "pythonPath": "backend/.venv/Scripts/python.exe",
+  "venvPath": "backend",
+  "venv": ".venv",
+  "extraPaths": [
+    "agent",
+    "backend",
+    "backend/.venv/Lib/site-packages"
+  ],
+  "exclude": [
+    "backend/.venv",
+    "frontend/node_modules",
+    "**/__pycache__"
+  ]
+}

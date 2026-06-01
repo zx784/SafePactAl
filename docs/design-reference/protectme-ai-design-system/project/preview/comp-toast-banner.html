@@ -1,0 +1,25 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .toast{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid rgba(14,23,48,.08);border-radius:14px;padding:12px 15px;box-shadow:var(--shadow-md);}
+  .toast .ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;}
+  .toast .ic svg{width:17px;height:17px;}
+  .toast h4{font:600 14px var(--font-sans);color:#0E1730;}
+  .toast p{font:400 12px var(--font-sans);color:#818BA3;margin-top:1px;}
+  .banner{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:11px 14px;}
+  .banner svg{width:16px;height:16px;color:#B7C2DC;flex:none;}
+  .banner span{font:500 12px/1.4 var(--font-sans);color:#B7C2DC;}
+</style>
+</head><body><div class="card on-light">
+  <div class="label on-light" style="margin-bottom:12px;">Toast &amp; persistent disclaimer</div>
+  <div class="col" style="gap:10px;">
+    <div class="toast"><div class="ic" style="background:#E4F6EC;color:#1FA463;"><i data-lucide="check-circle"></i></div><div><h4>Message copied</h4><p>Your clarification email is on the clipboard.</p></div></div>
+    <div class="toast"><div class="ic" style="background:#FEF3DC;color:#E8910C;"><i data-lucide="alert-circle"></i></div><div><h4>Large file</h4><p>This contract is 38 pages — analysis may take a moment.</p></div></div>
+    <div class="banner" style="background:#0B1124;"><i data-lucide="info"></i><span>ProtectMe AI helps you understand contracts. It does not replace a lawyer or provide legal advice.</span></div>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script><script>lucide.createIcons();</script>
+</body></html>

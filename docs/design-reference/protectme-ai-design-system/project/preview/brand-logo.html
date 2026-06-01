@@ -1,0 +1,28 @@
+<!doctype html>
+<html class="theme-dark"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="card.css">
+<style>
+  .lock{display:flex;align-items:center;gap:12px;}
+  .mark{width:44px;height:44px;border-radius:13px;background:var(--gradient-brand);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(99,102,241,.4);}
+  .mark svg{width:24px;height:24px;color:#fff;}
+  .wm{font:800 24px var(--font-sans);letter-spacing:-.02em;color:#F4F7FC;}
+  .wm b{background:var(--gradient-brand);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .tag{font:500 13px var(--font-sans);color:#7E8CAE;margin-top:14px;}
+</style>
+</head><body><div class="card">
+  <div class="label" style="margin-bottom:16px;">Wordmark &amp; lockup <span style="opacity:.6">(placeholder — shield mark from Lucide)</span></div>
+  <div class="lock">
+    <div class="mark"><i data-lucide="shield-check"></i></div>
+    <div class="wm">Protect<b>Me</b> AI</div>
+  </div>
+  <div class="tag">Understand before you sign. Ask before you agree.</div>
+  <div class="lock" style="margin-top:18px;">
+    <div class="mark" style="width:30px;height:30px;border-radius:9px;"><i data-lucide="shield-check" style="width:17px;height:17px;"></i></div>
+    <div class="wm" style="font-size:17px;">ProtectMe AI</div>
+    <div class="mark" style="background:#fff;box-shadow:var(--shadow-sm);"><i data-lucide="shield-check" style="color:#5B6EF5;"></i></div>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script><script>lucide.createIcons();</script>
+</body></html>

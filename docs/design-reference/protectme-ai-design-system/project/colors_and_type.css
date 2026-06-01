@@ -1,0 +1,134 @@
+/* =============================================================================
+   ProtectMe AI — Colors & Type
+   Loads brand webfonts and exposes ready-to-use semantic typography classes.
+   Pairs with tokens.css (load tokens.css FIRST). Color values live in tokens.
+   ============================================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+/* ----------------------------------------------------------------------------
+   Base
+   ---------------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--app-bg, #0B1124);
+  color: var(--app-fg, #F4F7FC);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ----------------------------------------------------------------------------
+   Semantic type ramp — apply as classes (.ds-display, .ds-h1 …) or copy the
+   declarations into component styles. These are the canonical text styles.
+   ---------------------------------------------------------------------------- */
+.ds-display {
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+  font-weight: var(--fw-extra);
+  letter-spacing: var(--ls-tight);
+}
+.ds-h1 {
+  font-size: var(--fs-h1);
+  line-height: var(--lh-heading);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+}
+.ds-h2 {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-heading);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-snug);
+}
+.ds-h3 {
+  font-size: var(--fs-h3);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-snug);
+}
+.ds-h4 {
+  font-size: var(--fs-h4);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-semibold);
+}
+.ds-body-lg {
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+}
+.ds-body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+}
+.ds-body-sm {
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-regular);
+}
+.ds-caption {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+}
+/* Eyebrow / overline — small all-caps label used above headings */
+.ds-eyebrow {
+  font-size: var(--fs-caption);
+  line-height: 1;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+.ds-code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  line-height: var(--lh-code);
+  font-weight: var(--fw-regular);
+  font-feature-settings: "liga" 0;
+}
+
+/* ----------------------------------------------------------------------------
+   Default element styling (when used outside utility classes, on white cards)
+   ---------------------------------------------------------------------------- */
+h1 { font: var(--fw-bold) var(--fs-h1)/var(--lh-heading) var(--font-sans); letter-spacing: var(--ls-tight); margin: 0; }
+h2 { font: var(--fw-bold) var(--fs-h2)/var(--lh-heading) var(--font-sans); letter-spacing: var(--ls-snug); margin: 0; }
+h3 { font: var(--fw-semibold) var(--fs-h3)/var(--lh-snug) var(--font-sans); margin: 0; }
+h4 { font: var(--fw-semibold) var(--fs-h4)/var(--lh-snug) var(--font-sans); margin: 0; }
+p  { margin: 0; }
+code, pre, kbd { font-family: var(--font-mono); font-size: var(--fs-code); }
+
+/* ----------------------------------------------------------------------------
+   Color helpers — text
+   ---------------------------------------------------------------------------- */
+.fg-primary   { color: var(--text-primary); }
+.fg-secondary { color: var(--text-secondary); }
+.fg-muted     { color: var(--text-muted); }
+.fg-on-dark   { color: var(--text-on-dark); }
+.fg-on-dark-2 { color: var(--text-on-dark-2); }
+.fg-brand     { color: var(--brand-solid); }
+.fg-link      { color: var(--text-link); }
+
+/* Gradient text — for hero accents only, used sparingly */
+.fg-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ----------------------------------------------------------------------------
+   Selection + focus
+   ---------------------------------------------------------------------------- */
+::selection { background: rgba(91, 110, 245, 0.28); }
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-xs);
+}
