@@ -1,11 +1,14 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/Button";
 import { LucideIcon } from "@/components/ui/Icon";
-import { Disclaimer } from "@/components/ui/Disclaimer";
 import { setActiveClause } from "@/lib/api";
 import { startAudioCapture, type AudioCaptureHandle } from "@/lib/audioCapture";
-import type { RiskReport, VoiceStatus, TranscriptEntry, DebugLine } from "@/lib/types";
+import type {
+  DebugLine,
+  RiskReport,
+  TranscriptEntry,
+  VoiceStatus,
+} from "@/lib/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface VoicePanelProps {
   sessionId: string;
@@ -26,20 +29,25 @@ type WsState = "connecting" | "open" | "closed" | "error";
 const MAX_SILENT_RECONNECTS = 3;
 
 interface LiveDiag {
-  micStatus:        "off" | "granted" | "denied" | "capturing";
-  chunksSent:       number;  // audio_input chunks sent by the browser
-  audioChunksRecv:  number;  // audio_chunk events received from backend
-  lastCloseCode:    number | null;
-  lastCloseReason:  string;
-  lastError:        string;
+  micStatus: "off" | "granted" | "denied" | "capturing";
+  chunksSent: number; // audio_input chunks sent by the browser
+  audioChunksRecv: number; // audio_chunk events received from backend
+  lastCloseCode: number | null;
+  lastCloseReason: string;
+  lastError: string;
   timeToFirstAudio: number | null; // seconds, from turn submit to first audio
-  fellBack:         boolean; // auto-switched to Journey TTS
+  fellBack: boolean; // auto-switched to Journey TTS
 }
 
 const INITIAL_DIAG: LiveDiag = {
-  micStatus: "off", chunksSent: 0, audioChunksRecv: 0,
-  lastCloseCode: null, lastCloseReason: "", lastError: "",
-  timeToFirstAudio: null, fellBack: false,
+  micStatus: "off",
+  chunksSent: 0,
+  audioChunksRecv: 0,
+  lastCloseCode: null,
+  lastCloseReason: "",
+  lastError: "",
+  timeToFirstAudio: null,
+  fellBack: false,
 };
 
 /** Read a NEXT_PUBLIC_ numeric env (seconds) with a fallback. */
@@ -56,19 +64,19 @@ const TURN_TIMEOUT_MS =
   envSeconds("NEXT_PUBLIC_LIVE_TURN_TIMEOUT_SECONDS", 5) * 1000;
 
 const STATUS_ICON: Record<VoiceStatus, string> = {
-  idle:         "mic-off",
-  listening:    "mic",
-  thinking:     "loader",
-  speaking:     "volume-2",
+  idle: "mic-off",
+  listening: "mic",
+  thinking: "loader",
+  speaking: "volume-2",
   tool_running: "zap",
-  draft_ready:  "check-circle",
-  error:        "alert-circle",
+  draft_ready: "check-circle",
+  error: "alert-circle",
 };
 
 // Stored per audio chunk in the playback queue
 interface AudioChunkEntry {
-  audio: string;       // base64 WAV
-  text: string;        // chunk text (drives live caption when available)
+  audio: string; // base64 WAV
+  text: string; // chunk text (drives live caption when available)
   duration_ms: number;
   turn_id: number;
 }
@@ -87,7 +95,9 @@ function getWsUrl(sessionId: string, useLive = false): string {
     process.env.NEXT_PUBLIC_API_URL ||
     "http://localhost:8001";
   const base = wsBase || apiBase.replace(/^http/, "ws");
-  return base.replace(/\/$/, "") + `/ws/${useLive ? "live" : "voice"}/${sessionId}`;
+  return (
+    base.replace(/\/$/, "") + `/ws/${useLive ? "live" : "voice"}/${sessionId}`
+  );
 }
 
 function buildWs(
@@ -98,10 +108,10 @@ function buildWs(
   onError: (e: Event) => void,
 ): WebSocket {
   const ws = new WebSocket(url);
-  ws.onopen    = onOpen;
+  ws.onopen = onOpen;
   ws.onmessage = onMsg;
-  ws.onclose   = onClose;
-  ws.onerror   = onError;
+  ws.onclose = onClose;
+  ws.onerror = onError;
   return ws;
 }
 
@@ -113,67 +123,70 @@ export function VoicePanel({
   onDebugLine,
   useLive = false,
 }: VoicePanelProps) {
-  const [voiceStatus, setVoiceStatus]   = useState<VoiceStatus>("idle");
-  const [statusLabel, setStatusLabel]   = useState("Connecting…");
-  const [transcript, setTranscript]     = useState<TranscriptEntry[]>([]);
-  const [draft, setDraft]               = useState<{ text: string; clauseIds: string[] } | null>(null);
-  const [isMuted, setIsMuted]           = useState(false);
-  const [isListening, setIsListening]   = useState(false);  // SpeechRecognition mode
-  const [isLiveMic, setIsLiveMic]       = useState(false);  // Live mic streaming mode
-  const [textInput, setTextInput]       = useState("");
-  const [wsState, setWsState]           = useState<WsState>("connecting");
-  const [draftCopied, setDraftCopied]   = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
+  const [statusLabel, setStatusLabel] = useState("Connecting…");
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [draft, setDraft] = useState<{
+    text: string;
+    clauseIds: string[];
+  } | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isListening, setIsListening] = useState(false); // SpeechRecognition mode
+  const [isLiveMic, setIsLiveMic] = useState(false); // Live mic streaming mode
+  const [textInput, setTextInput] = useState("");
+  const [wsState, setWsState] = useState<WsState>("connecting");
+  const [draftCopied, setDraftCopied] = useState(false);
   const [reconnectKey, setReconnectKey] = useState(0);
-  const [micLevel, setMicLevel]         = useState(0);  // 0–1 RMS for level indicator
+  const [micLevel, setMicLevel] = useState(0); // 0–1 RMS for level indicator
 
   // Effective transport mode. Starts from the useLive prop; auto-flips to TTS
   // (false) if Live produces no audio — the call keeps working either way.
-  const [liveMode, setLiveMode]         = useState(useLive);
-  const [diag, setDiag]                 = useState<LiveDiag>(INITIAL_DIAG);
-  const [showDiag, setShowDiag]         = useState(true);
+  const [liveMode, setLiveMode] = useState(useLive);
+  const [diag, setDiag] = useState<LiveDiag>(INITIAL_DIAG);
+  const [showDiag, setShowDiag] = useState(true);
 
   // ── Live caption (growing agent bubble) ─────────────────────────────────
   const [growingText, setGrowingText] = useState<string | null>(null);
 
   // ── Lifecycle / fallback refs ──────────────────────────────────────────
-  const endedByUserRef      = useRef(false);              // user clicked End Call
-  const reconnectAttemptsRef = useRef(0);                 // silent reconnect counter
-  const liveModeRef         = useRef(useLive);            // current mode (for handlers)
-  const fellBackRef         = useRef(false);              // already fell back this session
-  const noAudioTimerRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const gotAudioThisTurnRef = useRef(false);              // audio arrived for current turn
-  const turnStartRef        = useRef<number>(0);          // performance.now() at turn submit
-  const turnCountRef        = useRef(0);                  // submitted turns (1st gets longer grace)
+  const endedByUserRef = useRef(false); // user clicked End Call
+  const reconnectAttemptsRef = useRef(0); // silent reconnect counter
+  const liveModeRef = useRef(useLive); // current mode (for handlers)
+  const fellBackRef = useRef(false); // already fell back this session
+  const noAudioTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gotAudioThisTurnRef = useRef(false); // audio arrived for current turn
+  const turnStartRef = useRef<number>(0); // performance.now() at turn submit
+  const turnCountRef = useRef(0); // submitted turns (1st gets longer grace)
 
   // ── Greeting de-dup + playback-state refs ──────────────────────────────────
-  const greetingShownRef       = useRef(false);  // greeting text added to transcript
-  const acceptGreetingAudioRef = useRef(false);  // play THIS connection's greeting audio
-  const audioDoneRef           = useRef(false);  // backend signalled end-of-turn audio
-  const lastPlayedTurnRef      = useRef(-1);     // turn_id of the chunk last played
-  const connectLogKeyRef       = useRef("");     // de-dupe "WS connecting" (StrictMode)
+  const greetingShownRef = useRef(false); // greeting text added to transcript
+  const acceptGreetingAudioRef = useRef(false); // play THIS connection's greeting audio
+  const audioDoneRef = useRef(false); // backend signalled end-of-turn audio
+  const lastPlayedTurnRef = useRef(-1); // turn_id of the chunk last played
+  const connectLogKeyRef = useRef(""); // de-dupe "WS connecting" (StrictMode)
 
-  const wsRef            = useRef<WebSocket | null>(null);
-  const srRef            = useRef<any>(null);
-  const isMutedRef       = useRef(false);
-  const voicesRef        = useRef<SpeechSynthesisVoice[]>([]);
+  const wsRef = useRef<WebSocket | null>(null);
+  const srRef = useRef<any>(null);
+  const isMutedRef = useRef(false);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   // ── Live mic refs ────────────────────────────────────────────────────────
   const captureHandleRef = useRef<AudioCaptureHandle | null>(null);
 
   // ── Audio queue ──────────────────────────────────────────────────────────
-  const audioQueueRef    = useRef<Map<number, AudioChunkEntry>>(new Map());
-  const nextSeqRef       = useRef(0);
-  const isPlayingRef     = useRef(false);
-  const currentAudioRef  = useRef<HTMLAudioElement | null>(null);
+  const audioQueueRef = useRef<Map<number, AudioChunkEntry>>(new Map());
+  const nextSeqRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const currentTurnIdRef = useRef<number>(0);
   // Seqs whose TTS failed/timed out — skipped so a gap never stalls the queue.
-  const failedSeqsRef    = useRef<Set<number>>(new Set());
+  const failedSeqsRef = useRef<Set<number>>(new Set());
 
   // ── Live caption refs ────────────────────────────────────────────────────
-  const growingTextRef   = useRef("");
+  const growingTextRef = useRef("");
   const growingTurnIdRef = useRef(-1);
-  const revealTimersRef  = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const revealTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // ── Word-by-word reveal ──────────────────────────────────────────────────
   const clearRevealTimers = useCallback(() => {
@@ -181,25 +194,28 @@ export function VoicePanel({
     revealTimersRef.current = [];
   }, []);
 
-  const revealWords = useCallback((text: string, durationMs: number, turnId: number) => {
-    const words = text.trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return;
-    const msPerWord = Math.min(Math.max(durationMs / words.length, 40), 250);
-    words.forEach((word, i) => {
-      const t = setTimeout(() => {
-        if (currentTurnIdRef.current !== turnId) return;
-        const sep = growingTextRef.current.length > 0 ? " " : "";
-        growingTextRef.current = growingTextRef.current + sep + word;
-        setGrowingText(growingTextRef.current);
-      }, i * msPerWord);
-      revealTimersRef.current.push(t);
-    });
-  }, []);
+  const revealWords = useCallback(
+    (text: string, durationMs: number, turnId: number) => {
+      const words = text.trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return;
+      const msPerWord = Math.min(Math.max(durationMs / words.length, 40), 250);
+      words.forEach((word, i) => {
+        const t = setTimeout(() => {
+          if (currentTurnIdRef.current !== turnId) return;
+          const sep = growingTextRef.current.length > 0 ? " " : "";
+          growingTextRef.current = growingTextRef.current + sep + word;
+          setGrowingText(growingTextRef.current);
+        }, i * msPerWord);
+        revealTimersRef.current.push(t);
+      });
+    },
+    [],
+  );
 
   const finalizeGrowingText = useCallback(() => {
     if (growingTextRef.current.length > 0) {
       const text = growingTextRef.current;
-      setTranscript(prev => [...prev, { role: "agent", text, kind: "text" }]);
+      setTranscript((prev) => [...prev, { role: "agent", text, kind: "text" }]);
     }
     growingTextRef.current = "";
     growingTurnIdRef.current = -1;
@@ -208,7 +224,10 @@ export function VoicePanel({
 
   // ── Audio playback ───────────────────────────────────────────────────────
   const playNextChunk = useCallback(() => {
-    if (isMutedRef.current) { isPlayingRef.current = false; return; }
+    if (isMutedRef.current) {
+      isPlayingRef.current = false;
+      return;
+    }
     // Skip past any seqs whose TTS failed/timed out so the gap doesn't stall
     // the queue (later chunks that DID synthesize must still play).
     while (
@@ -245,7 +264,10 @@ export function VoicePanel({
     if (!isGreeting && growingTurnIdRef.current !== turn_id) {
       if (growingTextRef.current.length > 0) {
         const prevText = growingTextRef.current;
-        setTranscript(prev => [...prev, { role: "agent", text: prevText, kind: "text" }]);
+        setTranscript((prev) => [
+          ...prev,
+          { role: "agent", text: prevText, kind: "text" },
+        ]);
       }
       growingTextRef.current = "";
       growingTurnIdRef.current = turn_id;
@@ -267,7 +289,10 @@ export function VoicePanel({
       setVoiceStatus("speaking");
       setStatusLabel("Speaking…");
     };
-    el.onended = () => { currentAudioRef.current = null; playNextChunk(); };
+    el.onended = () => {
+      currentAudioRef.current = null;
+      playNextChunk();
+    };
     el.onerror = () => {
       currentAudioRef.current = null;
       // TTS failed for this chunk → show its text once as a fallback.
@@ -278,7 +303,9 @@ export function VoicePanel({
       }
       playNextChunk();
     };
-    el.play().catch(() => { isPlayingRef.current = false; });
+    el.play().catch(() => {
+      isPlayingRef.current = false;
+    });
   }, [revealWords, finalizeGrowingText]);
 
   const stopAudio = useCallback(() => {
@@ -314,29 +341,38 @@ export function VoicePanel({
   }, []);
 
   // Switch the whole call to the Journey TTS pipeline (reliable demo audio).
-  const fallbackToTts = useCallback((reason: string) => {
-    if (fellBackRef.current || !liveModeRef.current) return;
-    fellBackRef.current = true;
-    reconnectAttemptsRef.current = 0;   // give the TTS connection fresh retries
-    clearNoAudioTimer();
-    captureHandleRef.current?.stop();
-    captureHandleRef.current = null;
-    setIsLiveMic(false);
-    setMicLevel(0);
-    liveModeRef.current = false;
-    setLiveMode(false);
-    setDiag(d => ({ ...d, fellBack: true, micStatus: "off" }));
-    onDebugLine("error", `[Fallback] Gemini Live produced no audio. Using Journey TTS mode. (${reason})`);
-    setTranscript(prev => [...prev, {
-      role: "agent",
-      text: "Live voice didn't respond — switched to standard voice (Journey TTS). Please ask your question again.",
-      kind: "error",
-    }]);
-    setStatusLabel("Switched to standard voice");
-    setVoiceStatus("idle");
-    // Force a reconnect onto /ws/voice/ (the effect reads liveModeRef).
-    setReconnectKey(k => k + 1);
-  }, [clearNoAudioTimer, onDebugLine]);
+  const fallbackToTts = useCallback(
+    (reason: string) => {
+      if (fellBackRef.current || !liveModeRef.current) return;
+      fellBackRef.current = true;
+      reconnectAttemptsRef.current = 0; // give the TTS connection fresh retries
+      clearNoAudioTimer();
+      captureHandleRef.current?.stop();
+      captureHandleRef.current = null;
+      setIsLiveMic(false);
+      setMicLevel(0);
+      liveModeRef.current = false;
+      setLiveMode(false);
+      setDiag((d) => ({ ...d, fellBack: true, micStatus: "off" }));
+      onDebugLine(
+        "error",
+        `[Fallback] Gemini Live produced no audio. Using Journey TTS mode. (${reason})`,
+      );
+      setTranscript((prev) => [
+        ...prev,
+        {
+          role: "agent",
+          text: "Live voice didn't respond — switched to standard voice (Journey TTS). Please ask your question again.",
+          kind: "error",
+        },
+      ]);
+      setStatusLabel("Switched to standard voice");
+      setVoiceStatus("idle");
+      // Force a reconnect onto /ws/voice/ (the effect reads liveModeRef).
+      setReconnectKey((k) => k + 1);
+    },
+    [clearNoAudioTimer, onDebugLine],
+  );
 
   // Arm the no-audio watchdog after a turn is submitted. Cleared on first audio.
   // First Live turn gets a longer grace window (cold start) than later turns.
@@ -346,21 +382,30 @@ export function VoicePanel({
     gotAudioThisTurnRef.current = false;
     turnStartRef.current = performance.now();
     turnCountRef.current += 1;
-    const timeoutMs = turnCountRef.current <= 1 ? FIRST_TURN_TIMEOUT_MS : TURN_TIMEOUT_MS;
-    onDebugLine("info", `No-audio watchdog armed: ${timeoutMs / 1000}s (turn ${turnCountRef.current})`);
+    const timeoutMs =
+      turnCountRef.current <= 1 ? FIRST_TURN_TIMEOUT_MS : TURN_TIMEOUT_MS;
+    onDebugLine(
+      "info",
+      `No-audio watchdog armed: ${timeoutMs / 1000}s (turn ${turnCountRef.current})`,
+    );
     noAudioTimerRef.current = setTimeout(() => {
       if (!gotAudioThisTurnRef.current) {
-        setTranscript(prev => [...prev, {
-          role: "agent",
-          text: "No audio received from Live model. Falling back to Journey TTS.",
-          kind: "error",
-        }]);
+        setTranscript((prev) => [
+          ...prev,
+          {
+            role: "agent",
+            text: "No audio received from Live model. Falling back to Journey TTS.",
+            kind: "error",
+          },
+        ]);
         fallbackToTts(`no audio in ${timeoutMs / 1000}s`);
       }
     }, timeoutMs);
   }, [clearNoAudioTimer, fallbackToTts, onDebugLine]);
 
-  useEffect(() => { liveModeRef.current = liveMode; }, [liveMode]);
+  useEffect(() => {
+    liveModeRef.current = liveMode;
+  }, [liveMode]);
 
   // ── Live mic control ─────────────────────────────────────────────────────
   const startLiveMic = useCallback(async () => {
@@ -384,17 +429,30 @@ export function VoicePanel({
         wsRef.current,
         (level) => setMicLevel(level),
         (info) => onDebugLine("info", `[Audio] ${info}`),
-        (count) => setDiag(d => ({ ...d, chunksSent: count })),
+        (count) => setDiag((d) => ({ ...d, chunksSent: count })),
       );
-      setDiag(d => ({ ...d, micStatus: "capturing" }));
+      setDiag((d) => ({ ...d, micStatus: "capturing" }));
       onDebugLine("info", "Mic permission granted — capture started");
     } catch (err: any) {
       setIsLiveMic(false);
       setVoiceStatus("error");
-      setDiag(d => ({ ...d, micStatus: "denied", lastError: `Mic: ${err?.message ?? err}` }));
-      onDebugLine("error", `Mic permission denied / error: ${err?.message ?? err}`);
+      setDiag((d) => ({
+        ...d,
+        micStatus: "denied",
+        lastError: `Mic: ${err?.message ?? err}`,
+      }));
+      onDebugLine(
+        "error",
+        `Mic permission denied / error: ${err?.message ?? err}`,
+      );
     }
-  }, [finalizeGrowingText, clearRevealTimers, stopAudio, resetAudioForNewTurn, onDebugLine]);
+  }, [
+    finalizeGrowingText,
+    clearRevealTimers,
+    stopAudio,
+    resetAudioForNewTurn,
+    onDebugLine,
+  ]);
 
   const stopLiveMic = useCallback(() => {
     // Tell the backend the mic was released so VAD finalizes the turn and the
@@ -408,26 +466,34 @@ export function VoicePanel({
     }
     setIsLiveMic(false);
     setMicLevel(0);
-    setDiag(d => ({ ...d, micStatus: "granted" }));
+    setDiag((d) => ({ ...d, micStatus: "granted" }));
     setVoiceStatus("thinking");
     setStatusLabel("Thinking…");
     onDebugLine("info", "Live mic stopped — waiting for response");
-    armNoAudioTimer();   // 5s watchdog → fall back to Journey TTS if silent
+    armNoAudioTimer(); // 5s watchdog → fall back to Journey TTS if silent
   }, [onDebugLine, armNoAudioTimer]);
 
   // ── Browser speechSynthesis (TTS mode) fallback ──────────────────────────
   const hasSR =
     typeof window !== "undefined" &&
-    !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+    !!(
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition
+    );
 
-  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const load = () => { voicesRef.current = window.speechSynthesis.getVoices(); };
+    const load = () => {
+      voicesRef.current = window.speechSynthesis.getVoices();
+    };
     load();
     window.speechSynthesis.addEventListener("voiceschanged", load);
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
+    return () =>
+      window.speechSynthesis.removeEventListener("voiceschanged", load);
   }, []);
 
   // Auto-scroll transcript
@@ -436,7 +502,7 @@ export function VoicePanel({
   }, [transcript, growingText]);
 
   const addEntry = useCallback((entry: TranscriptEntry) => {
-    setTranscript(prev => [...prev, entry]);
+    setTranscript((prev) => [...prev, entry]);
   }, []);
 
   // ── WebSocket event handler ──────────────────────────────────────────────
@@ -460,7 +526,7 @@ export function VoicePanel({
         // from StrictMode double-mount / silent reconnects).
         if (ev.greeting) {
           if (greetingShownRef.current) {
-            acceptGreetingAudioRef.current = false;   // a duplicate greeting — drop its audio
+            acceptGreetingAudioRef.current = false; // a duplicate greeting — drop its audio
             onDebugLine("info", "greeting suppressed (already shown)");
           } else {
             greetingShownRef.current = true;
@@ -492,7 +558,7 @@ export function VoicePanel({
 
       case "audio_chunk": {
         const chunkTurnId: number = ev.turn_id ?? 0;
-        const seq: number         = ev.seq ?? 0;
+        const seq: number = ev.seq ?? 0;
 
         // Drop the audio of a duplicate greeting (turn 0 from a repeat connection).
         if (chunkTurnId === 0 && !acceptGreetingAudioRef.current) {
@@ -502,29 +568,40 @@ export function VoicePanel({
 
         // Audio arrived → the session genuinely works.
         gotAudioThisTurnRef.current = true;
-        reconnectAttemptsRef.current = 0;          // healthy: allow future silent reconnects
+        reconnectAttemptsRef.current = 0; // healthy: allow future silent reconnects
         clearNoAudioTimer();
         {
-          const tfa = turnStartRef.current ? (performance.now() - turnStartRef.current) / 1000 : null;
-          setDiag(d => ({
+          const tfa = turnStartRef.current
+            ? (performance.now() - turnStartRef.current) / 1000
+            : null;
+          setDiag((d) => ({
             ...d,
             audioChunksRecv: d.audioChunksRecv + 1,
-            timeToFirstAudio: d.audioChunksRecv === 0 && tfa !== null ? Math.round(tfa * 100) / 100 : d.timeToFirstAudio,
+            timeToFirstAudio:
+              d.audioChunksRecv === 0 && tfa !== null
+                ? Math.round(tfa * 100) / 100
+                : d.timeToFirstAudio,
           }));
         }
         // Greeting audio (turn 0) plays at panel open while currentTurnIdRef is
         // still 0; otherwise discard chunks from interrupted/old turns.
         if (chunkTurnId !== currentTurnIdRef.current) {
-          onDebugLine("info", `audio_chunk seq=${seq} turn=${chunkTurnId} discarded (current=${currentTurnIdRef.current})`);
+          onDebugLine(
+            "info",
+            `audio_chunk seq=${seq} turn=${chunkTurnId} discarded (current=${currentTurnIdRef.current})`,
+          );
           break;
         }
-        onDebugLine("info", `audio_chunk seq=${seq} turn=${chunkTurnId} ${ev.duration_ms ?? "?"}ms`);
+        onDebugLine(
+          "info",
+          `audio_chunk seq=${seq} turn=${chunkTurnId} ${ev.duration_ms ?? "?"}ms`,
+        );
         if (!isMutedRef.current) {
           audioQueueRef.current.set(seq, {
-            audio:       ev.audio ?? "",
-            text:        ev.text ?? "",
+            audio: ev.audio ?? "",
+            text: ev.text ?? "",
             duration_ms: ev.duration_ms ?? 0,
-            turn_id:     chunkTurnId,
+            turn_id: chunkTurnId,
           });
           if (!isPlayingRef.current) playNextChunk();
         }
@@ -539,7 +616,10 @@ export function VoicePanel({
         if (!isPlayingRef.current && audioQueueRef.current.size === 0) {
           audioDoneRef.current = false;
           finalizeGrowingText();
-          if (!liveMode) { setVoiceStatus("idle"); setStatusLabel("Ready"); }
+          if (!liveMode) {
+            setVoiceStatus("idle");
+            setStatusLabel("Ready");
+          }
         }
         break;
 
@@ -548,7 +628,10 @@ export function VoicePanel({
         const errSeq: number = typeof ev.seq === "number" ? ev.seq : -1;
         // Ignore late errors from an interrupted/old turn.
         if (errTurnId !== currentTurnIdRef.current) {
-          onDebugLine("info", `tts_error seq=${errSeq} turn=${errTurnId} discarded`);
+          onDebugLine(
+            "info",
+            `tts_error seq=${errSeq} turn=${errTurnId} discarded`,
+          );
           break;
         }
         // Mark this seq failed so playNextChunk skips it instead of stalling.
@@ -563,7 +646,10 @@ export function VoicePanel({
         }
         // Resume playback if we were stalled waiting on this seq.
         if (!isPlayingRef.current && !isMutedRef.current) playNextChunk();
-        onDebugLine("error", `[TTS] seq=${errSeq}: ${ev.message ?? "TTS failed"}`);
+        onDebugLine(
+          "error",
+          `[TTS] seq=${errSeq}: ${ev.message ?? "TTS failed"}`,
+        );
         break;
       }
 
@@ -583,7 +669,7 @@ export function VoicePanel({
         break;
 
       case "error":
-        setDiag(d => ({ ...d, lastError: String(ev.message ?? "") }));
+        setDiag((d) => ({ ...d, lastError: String(ev.message ?? "") }));
         onDebugLine("error", `Voice: ${ev.message}`);
         // In Live mode a backend error means no audio is coming → fall back.
         if (liveModeRef.current && !fellBackRef.current) {
@@ -603,7 +689,9 @@ export function VoicePanel({
     // The dashboard already set + awaited the active clause before opening this
     // panel; this re-POST is a defensive backstop and confirms it's loaded.
     setActiveClause(sessionId, initialClauseId)
-      .then(() => onDebugLine("info", `[Voice] active clause loaded: ${initialClauseId}`))
+      .then(() =>
+        onDebugLine("info", `[Voice] active clause loaded: ${initialClauseId}`),
+      )
       .catch(() => onDebugLine("error", "Failed to set active clause"));
   }, []);
 
@@ -615,7 +703,10 @@ export function VoicePanel({
     const connectKey = `${reconnectKey}:${mode}`;
     if (connectLogKeyRef.current !== connectKey) {
       connectLogKeyRef.current = connectKey;
-      onDebugLine("info", `WS connecting — ${mode ? "Live (/ws/live/)" : "TTS (/ws/voice/)"}…`);
+      onDebugLine(
+        "info",
+        `WS connecting — ${mode ? "Live (/ws/live/)" : "TTS (/ws/voice/)"}…`,
+      );
     }
     setWsState("connecting");
 
@@ -627,44 +718,65 @@ export function VoicePanel({
         // NOTE: do NOT reset the reconnect counter here. A session that opens
         // then dies immediately would otherwise loop forever. The counter is
         // reset only when real audio arrives (proof the session works).
-        setDiag(d => ({ ...d, chunksSent: 0, audioChunksRecv: 0 }));
+        setDiag((d) => ({ ...d, chunksSent: 0, audioChunksRecv: 0 }));
         onDebugLine("info", "WS opened");
       },
       (e: MessageEvent) => {
-        try { onEventRef.current(JSON.parse(e.data)); }
-        catch { onDebugLine("error", "Malformed WS message"); }
+        try {
+          onEventRef.current(JSON.parse(e.data));
+        } catch {
+          onDebugLine("error", "Malformed WS message");
+        }
       },
       (ev?: CloseEvent) => {
-        const code   = ev?.code ?? 0;
+        const code = ev?.code ?? 0;
         const reason = ev?.reason ?? "";
         setIsListening(false);
         setIsLiveMic(false);
         captureHandleRef.current?.stop();
         captureHandleRef.current = null;
-        setDiag(d => ({ ...d, lastCloseCode: code, lastCloseReason: reason, micStatus: "off" }));
-        onDebugLine("info", `WS closed code=${code} reason=${reason || "(none)"}`);
+        setDiag((d) => ({
+          ...d,
+          lastCloseCode: code,
+          lastCloseReason: reason,
+          micStatus: "off",
+        }));
+        onDebugLine(
+          "info",
+          `WS closed code=${code} reason=${reason || "(none)"}`,
+        );
 
         if (endedByUserRef.current) {
-          setWsState("closed");                           // user hung up → "Call ended"
+          setWsState("closed"); // user hung up → "Call ended"
           return;
         }
-        // Unexpected drop while in-call → reconnect silently (no scary UI).
         if (reconnectAttemptsRef.current < MAX_SILENT_RECONNECTS) {
           reconnectAttemptsRef.current += 1;
-          onDebugLine("info", `Unexpected close — silent reconnect ${reconnectAttemptsRef.current}/${MAX_SILENT_RECONNECTS}`);
+          onDebugLine(
+            "info",
+            `Unexpected close — silent reconnect ${reconnectAttemptsRef.current}/${MAX_SILENT_RECONNECTS}`,
+          );
           setStatusLabel("Reconnecting…");
-          setReconnectKey(k => k + 1);
+          setReconnectKey((k) => k + 1);
         } else if (liveModeRef.current && !fellBackRef.current) {
           // Live keeps dropping → switch to Journey TTS so the demo still talks.
-          onDebugLine("error", `Live unstable — ${MAX_SILENT_RECONNECTS} reconnects failed (last close code=${code})`);
-          fallbackToTts(`Live unstable (${MAX_SILENT_RECONNECTS} reconnects failed)`);
+          onDebugLine(
+            "error",
+            `Live unstable — ${MAX_SILENT_RECONNECTS} reconnects failed (last close code=${code})`,
+          );
+          fallbackToTts(
+            `Live unstable (${MAX_SILENT_RECONNECTS} reconnects failed)`,
+          );
         } else {
-          setWsState("error");                            // give up → manual reconnect + reason
-          onDebugLine("error", `Reconnect failed after ${MAX_SILENT_RECONNECTS} attempts (last close code=${code})`);
+          setWsState("error"); // give up → manual reconnect + reason
+          onDebugLine(
+            "error",
+            `Reconnect failed after ${MAX_SILENT_RECONNECTS} attempts (last close code=${code})`,
+          );
         }
       },
       () => {
-        setDiag(d => ({ ...d, lastError: "WebSocket connection error" }));
+        setDiag((d) => ({ ...d, lastError: "WebSocket connection error" }));
         onDebugLine("error", "WS error");
       },
     );
@@ -676,40 +788,37 @@ export function VoicePanel({
       captureHandleRef.current = null;
       stopAll();
       srRef.current?.stop();
-      // Detach handlers so this intentional close doesn't trigger reconnect logic.
       ws.onclose = null;
       ws.onerror = null;
       ws.close();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, reconnectKey, liveMode]);
 
   const reconnect = useCallback(() => {
-    currentTurnIdRef.current  = 0;
-    growingTextRef.current    = "";
-    growingTurnIdRef.current  = -1;
+    currentTurnIdRef.current = 0;
+    growingTextRef.current = "";
+    growingTurnIdRef.current = -1;
     setGrowingText(null);
     setTranscript([]);
     setDraft(null);
     setVoiceStatus("idle");
     setIsLiveMic(false);
     setMicLevel(0);
-    endedByUserRef.current     = false;
+    endedByUserRef.current = false;
     reconnectAttemptsRef.current = 0;
-    turnCountRef.current       = 0;
-    greetingShownRef.current   = false;   // manual reconnect = fresh start → greet once
+    turnCountRef.current = 0;
+    greetingShownRef.current = false;
     acceptGreetingAudioRef.current = false;
-    audioDoneRef.current       = false;
+    audioDoneRef.current = false;
     clearNoAudioTimer();
     clearRevealTimers();
     resetAudioForNewTurn();
     captureHandleRef.current?.stop();
     captureHandleRef.current = null;
-    setDiag(d => ({ ...INITIAL_DIAG, fellBack: d.fellBack }));
-    setReconnectKey(k => k + 1);
+    setDiag((d) => ({ ...INITIAL_DIAG, fellBack: d.fellBack }));
+    setReconnectKey((k) => k + 1);
   }, [clearRevealTimers, resetAudioForNewTurn, clearNoAudioTimer]);
 
-  // ── Text input (works in both TTS and Live mode) ──────────────────────────
   const sendMessage = useCallback(
     (text: string, type: "transcript" | "text_input") => {
       if (wsRef.current?.readyState !== WebSocket.OPEN || !text.trim()) return;
@@ -720,50 +829,93 @@ export function VoicePanel({
       resetAudioForNewTurn();
       addEntry({ role: "user", text, kind: "text" });
       wsRef.current.send(JSON.stringify({ type, text }));
-      onDebugLine("info", `Sent (${type}) turn=${currentTurnIdRef.current}: ${text}`);
-      armNoAudioTimer();   // 5s watchdog → fall back to Journey TTS if silent
+      onDebugLine(
+        "info",
+        `Sent (${type}) turn=${currentTurnIdRef.current}: ${text}`,
+      );
+      armNoAudioTimer();
     },
-    [stopAll, resetAudioForNewTurn, addEntry, finalizeGrowingText, clearRevealTimers, onDebugLine, armNoAudioTimer],
+    [
+      stopAll,
+      resetAudioForNewTurn,
+      addEntry,
+      finalizeGrowingText,
+      clearRevealTimers,
+      onDebugLine,
+      armNoAudioTimer,
+    ],
   );
 
-  // ── SpeechRecognition (TTS mode only) ────────────────────────────────────
   const startListening = useCallback(() => {
     if (!hasSR || liveMode) return;
-    if (isListening || srRef.current) return;  // already listening — don't restart/relog
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (isListening || srRef.current) return;
+    const SR =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
     const sr = new SR();
-    sr.continuous = false; sr.interimResults = false; sr.lang = "en-US";
+    sr.continuous = false;
+    sr.interimResults = false;
+    sr.lang = "en-US";
     sr.onresult = (e: any) => {
       const text: string = e.results[0][0].transcript;
-      setIsListening(false); setVoiceStatus("thinking");
+      setIsListening(false);
+      setVoiceStatus("thinking");
       sendMessage(text, "transcript");
       onDebugLine("info", `Speech: "${text}"`);
     };
-    sr.onerror = (e: any) => { setIsListening(false); setVoiceStatus("idle"); onDebugLine("error", `SpeechRecognition: ${e.error}`); };
-    sr.onend = () => { setIsListening(false); srRef.current = null; };
+    sr.onerror = (e: any) => {
+      setIsListening(false);
+      setVoiceStatus("idle");
+      onDebugLine("error", `SpeechRecognition: ${e.error}`);
+    };
+    sr.onend = () => {
+      setIsListening(false);
+      srRef.current = null;
+    };
     srRef.current = sr;
-    stopAll(); sr.start(); setIsListening(true); setVoiceStatus("listening");
+    stopAll();
+    sr.start();
+    setIsListening(true);
+    setVoiceStatus("listening");
     onDebugLine("info", "Listening started");
   }, [hasSR, liveMode, sendMessage, stopAll, onDebugLine]);
 
   const stopListening = useCallback(() => {
-    srRef.current?.stop(); srRef.current = null; setIsListening(false); setVoiceStatus("idle");
+    srRef.current?.stop();
+    srRef.current = null;
+    setIsListening(false);
+    setVoiceStatus("idle");
   }, []);
 
   const handleEndCall = useCallback(() => {
-    endedByUserRef.current = true;   // suppress silent reconnect; allow "Call ended"
+    endedByUserRef.current = true;
     clearNoAudioTimer();
-    finalizeGrowingText(); clearRevealTimers();
-    captureHandleRef.current?.stop(); captureHandleRef.current = null;
-    stopAll(); srRef.current?.stop(); wsRef.current?.close(); onClose();
-  }, [finalizeGrowingText, clearRevealTimers, stopAll, clearNoAudioTimer, onClose]);
+    finalizeGrowingText();
+    clearRevealTimers();
+    captureHandleRef.current?.stop();
+    captureHandleRef.current = null;
+    stopAll();
+    srRef.current?.stop();
+    wsRef.current?.close();
+    onClose();
+  }, [
+    finalizeGrowingText,
+    clearRevealTimers,
+    stopAll,
+    clearNoAudioTimer,
+    onClose,
+  ]);
 
-  const handleTextSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!textInput.trim()) return;
-    sendMessage(textInput.trim(), "text_input");
-    setTextInput(""); setVoiceStatus("thinking");
-  }, [textInput, sendMessage]);
+  const handleTextSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!textInput.trim()) return;
+      sendMessage(textInput.trim(), "text_input");
+      setTextInput("");
+      setVoiceStatus("thinking");
+    },
+    [textInput, sendMessage],
+  );
 
   const handleCopyDraft = useCallback(async () => {
     if (!draft) return;
@@ -773,219 +925,227 @@ export function VoicePanel({
     setTimeout(() => setDraftCopied(false), 2000);
   }, [draft, onDebugLine]);
 
-  const canInteract = wsState === "open" && voiceStatus !== "thinking" && voiceStatus !== "tool_running";
+  const canInteract =
+    wsState === "open" &&
+    voiceStatus !== "thinking" &&
+    voiceStatus !== "tool_running";
 
-  // Mic button behaviour: Live mode uses audio streaming; TTS mode uses SpeechRecognition
   const isMicActive = liveMode ? isLiveMic : isListening;
   const handleMicClick = liveMode
-    ? () => { isMicActive ? stopLiveMic() : void startLiveMic(); }
-    : () => { isMicActive ? stopListening() : startListening(); };
+    ? () => {
+        isMicActive ? stopLiveMic() : void startLiveMic();
+      }
+    : () => {
+        isMicActive ? stopListening() : startListening();
+      };
   const canShowMic = liveMode || hasSR;
-
   return (
-    <div className="msg-panel">
-      {/* Header */}
-      <div className="mp-head">
-        <div className="mp-head-left">
-          <LucideIcon name="phone" size={17} />
-          Voice Agent
-          {liveMode ? (
-            <span
-              style={{ fontSize: 10, background: "var(--state-warn-text, #b45309)", color: "#fff", borderRadius: 4, padding: "1px 5px", fontWeight: 600, letterSpacing: "0.04em" }}
-              title="Gemini Live is experimental and not the default demo voice"
-            >
-              LIVE · EXPERIMENTAL
-            </span>
-          ) : diag.fellBack ? (
-            <span style={{ fontSize: 10, background: "var(--state-warn-text, #b45309)", color: "#fff", borderRadius: 4, padding: "1px 5px", fontWeight: 600, letterSpacing: "0.04em" }} title="Auto-switched from Gemini Live">
-              TTS
-            </span>
-          ) : null}
-          {initialClauseId && riskReport.risks.find(r => r.id === initialClauseId) && (
-            <span style={{ fontSize: 12, color: "var(--text-on-dark-muted)", fontWeight: 400 }}>
-              · {riskReport.risks.find(r => r.id === initialClauseId)!.title.slice(0, 28)}…
-            </span>
-          )}
+    <div className="flex flex-col h-full bg-white relative animate-in slide-in-from-right duration-500 ">
+      <div className="p-4 px-6 border-b border-slate-100 flex items-center justify-between ">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xs bg-gradient-to-br from-[#67a1ff] via-[#7aadff] to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <LucideIcon name="mic" size={20} />
+          </div>
+          <div>
+            <h2 className="text-base font-black text-[#2e2e2e] tracking-tight">
+              Legal Assistant
+            </h2>{" "}
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              Neural Audio Session
+            </p>
+          </div>
         </div>
-        <button className="mp-close" onClick={handleEndCall} aria-label="End call">
-          <LucideIcon name="x" size={18} />
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-slate-50 rounded-xl transition-all"
+        >
+          <LucideIcon name="x" size={20} className="text-zinc-500" />
         </button>
       </div>
 
-      {/* Body */}
-      <div className="vp-body">
-        {/* Voice circle */}
-        <div className="vc-wrap">
-          <div
-            className={`vc-ring state-${voiceStatus}`}
-            style={
-              isLiveMic && micLevel > 0.02
-                ? { transform: `scale(${1 + Math.min(micLevel * 1.5, 0.25)})`, transition: "transform 0.08s ease-out" }
-                : undefined
-            }
-          >
-            <LucideIcon
-              name={STATUS_ICON[voiceStatus]}
-              size={28}
-              style={
-                voiceStatus === "thinking" || voiceStatus === "tool_running"
-                  ? { animation: "spin 1s linear infinite" }
-                  : undefined
-              }
-            />
+      <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-white">
+        <div className="py-2 pt-0  flex flex-col items-center justify-center bg-white">
+          <div className="relative flex items-center justify-center w-36 h-36">
+            {(voiceStatus === "listening" || voiceStatus === "speaking") && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                  className="absolute rounded-full border-2 border-[#67a1ff]/20 bg-[#67a1ff]/5 transition-all duration-150 ease-out"
+                  style={{
+                    width: `${140 + micLevel * 200}px`,
+                    height: `${140 + micLevel * 200}px`,
+                    opacity: 0.3 + micLevel,
+                  }}
+                />
+                <div
+                  className="absolute rounded-full border-2 border-[#67a1ff]/40 transition-all duration-200 ease-out"
+                  style={{
+                    width: `${100 + micLevel * 120}px`,
+                    height: `${100 + micLevel * 120}px`,
+                  }}
+                />
+                <div
+                  className="absolute rounded-full bg-[#67a1ff]/10 animate-ping"
+                  style={{
+                    width: `${80 + micLevel * 50}px`,
+                    height: `${80 + micLevel * 50}px`,
+                  }}
+                />
+              </div>
+            )}
+
+            <div
+              className={`relative w-28 h-28 rounded-full flex items-center justify-center z-20 transition-all duration-500
+        ${
+          voiceStatus === "listening"
+            ? "bg-[#67a1ff] text-white shadow-[0_0_50px_rgba(103,161,255,0.4)] scale-110"
+            : "bg-white border-2 border-slate-100 text-slate-400 shadow-xl shadow-slate-100"
+        }
+      `}
+            >
+              <LucideIcon
+                name={STATUS_ICON[voiceStatus]}
+                size={34}
+                className={voiceStatus === "thinking" ? "animate-spin" : ""}
+              />
+
+              {voiceStatus === "thinking" && (
+                <div className="absolute inset-[-6px] rounded-full border-2 border-[#67a1ff]/20 border-t-[#67a1ff] animate-spin" />
+              )}
+            </div>
           </div>
-          <span className="vc-label">{statusLabel}</span>
-          {/* "Call ended" only after the user hangs up — never during listening
-              (an unexpected drop triggers a silent reconnect, not this label). */}
-          {wsState === "closed" && endedByUserRef.current && (
-            <span style={{ fontSize: 12, color: "var(--text-on-dark-muted)" }}>Call ended</span>
-          )}
+
+          <div className="mt-0 flex flex-col items-center gap-1">
+            <h3
+              className={`text-base font-bold tracking-tight transition-colors duration-300 ${
+                voiceStatus === "listening" ? "text-red-500" : "text-[#67a1ff]"
+              }`}
+            >
+              {statusLabel}
+            </h3>
+            {wsState === "closed" && endedByUserRef.current && (
+              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">
+                Session Ended
+              </span>
+            )}
+          </div>
         </div>
-
-        {/* Error / reconnect — only after a real failure (silent retries exhausted) */}
-        {wsState === "error" && (
-          <div className="vp-reconnect">
-            <p style={{ fontSize: 13, color: "var(--state-error-text)", margin: 0 }}>
-              {diag.lastCloseCode
-                ? `Connection lost (code ${diag.lastCloseCode}${diag.lastCloseReason ? `: ${diag.lastCloseReason}` : ""}). Reconnect failed after ${MAX_SILENT_RECONNECTS} attempts.`
-                : "Connection failed. Ensure the backend is running on port 8001."}
-            </p>
-            <Button variant="secondary" onDark size="sm" icon="refresh-cw" onClick={reconnect}>
-              Reconnect
-            </Button>
-          </div>
-        )}
-
-        {/* Live diagnostic panel (dev) — only when the call was opened in Live mode */}
-        {useLive && showDiag && (
-          <div className="vp-diag">
-            <div className="vp-diag-head">
-              <span>Live diagnostics</span>
-              <button className="vp-diag-toggle" onClick={() => setShowDiag(false)} aria-label="Hide diagnostics">
-                hide
-              </button>
-            </div>
-            <div className="vp-diag-grid">
-              <span>WS</span><b>{wsState}{diag.fellBack ? " · TTS fallback" : liveMode ? " · Live" : ""}</b>
-              <span>Mic</span><b>{diag.micStatus}</b>
-              <span>Chunks sent</span><b>{diag.chunksSent}</b>
-              <span>Audio recv</span><b>{diag.audioChunksRecv}</b>
-              <span>First audio</span><b>{diag.timeToFirstAudio !== null ? `${diag.timeToFirstAudio}s` : "—"}</b>
-              <span>Last close</span><b>{diag.lastCloseCode ?? "—"}{diag.lastCloseReason ? ` (${diag.lastCloseReason})` : ""}</b>
-              <span>Last error</span><b>{diag.lastError || "—"}</b>
-            </div>
-          </div>
-        )}
-        {useLive && !showDiag && (
-          <button className="vp-diag-show" onClick={() => setShowDiag(true)}>show diagnostics</button>
-        )}
-
-        {/* Transcript */}
-        <div className="vp-transcript scroll scroll-light">
-          {transcript.length === 0 && growingText === null && wsState === "open" && (
-            <div className="vp-empty">
-              <p>
-                {liveMode
-                  ? "Press the mic and speak — Gemini Live is listening."
-                  : hasSR
-                    ? "Tap the mic and ask about any risk in your contract."
-                    : "Type a question about any risk in your contract."}
+        <div className="flex-1 p-8 py-4 space-y-4">
+          {transcript.length === 0 && !growingText && (
+            <div className="text-center py-10 opacity-30">
+              <LucideIcon
+                name="message-square"
+                size={32}
+                className="mx-auto mb-4"
+              />
+              <p className="text-xs font-bold uppercase tracking-widest leading-relaxed">
+                Start talking to analyze
+                <br />
+                this document together
               </p>
             </div>
           )}
 
           {transcript.map((entry, i) => (
-            <div key={i} className={`vp-turn${entry.role === "user" ? " vp-turn-user" : ""}`}>
+            <div
+              key={i}
+              className={`flex flex-col ${entry.role === "user" ? "items-end" : "items-start"}`}
+            >
+              <span className="text-gray-500 mb-1 text-xs">
+                {entry.role === "user" ? "You" : "Agent"}
+              </span>
               {entry.kind === "draft" ? (
-                <div className="vp-draft-card">
-                  <div className="vp-draft-card-head">
-                    <span className="mp-section-label" style={{ marginBottom: 0 }}>
-                      <LucideIcon name="check-circle" size={12} />
-                      Draft ready
+                <div className="w-full bg-blue-50/50 border border-blue-100 p-4 rounded-2xl mb-2">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[10px] font-black text-blue-500 uppercase">
+                      AI Draft Ready
                     </span>
-                    <button className="mp-tweak" onClick={handleCopyDraft}>
-                      <LucideIcon name={draftCopied ? "check" : "copy"} size={12} />
-                      {draftCopied ? "Copied!" : "Copy"}
+                    <button
+                      onClick={handleCopyDraft}
+                      className="text-xs font-bold text-blue-600"
+                    >
+                      Copy
                     </button>
                   </div>
-                  <pre className="vp-draft-text">{entry.text}</pre>
+                  <pre className="text-xs text-slate-600 whitespace-pre-wrap">
+                    {entry.text}
+                  </pre>
                 </div>
               ) : (
-                <div className={`vp-bubble vp-bubble-${entry.role === "user" ? "user" : entry.kind === "error" ? "error" : "agent"}`}>
+                <div
+                  className={`max-w-[85%] p-5 rounded-2xl text-sm leading-relaxed font-medium  transition-all ${
+                    entry.role === "user"
+                      ? "bg-[#7aadff] text-white rounded-tr-none"
+                      : "bg-slate-50 text-[#4f4f4f] border border-[#eee] rounded-tl-none"
+                  }`}
+                >
                   {entry.text}
                 </div>
               )}
             </div>
           ))}
 
-          {/* Live caption — growing agent bubble */}
           {growingText !== null && (
-            <div className="vp-turn">
-              <div className="vp-bubble vp-bubble-agent vp-bubble-live">
-                {growingText || <span className="vp-live-dot" aria-label="Speaking…" />}
+            <div className="flex flex-col items-start animate-pulse">
+              <div className="max-w-[85%] p-5 rounded-2xl rounded-tl-none bg-[#67a1ff]/10 text-[#67a1ff] font-medium text-sm border border-[#67a1ff]/20">
+                {growingText || "..."}
               </div>
             </div>
           )}
-
           <div ref={transcriptEndRef} />
         </div>
+      </div>
 
-        {/* Controls */}
-        {wsState === "open" && (
-          <div className="vp-controls">
-            {canShowMic && (
-              <button
-                className={`vc-btn${isMicActive ? " is-active" : ""}`}
-                onClick={handleMicClick}
-                disabled={!canInteract && !isMicActive}
-                aria-label={isMicActive ? "Stop" : "Speak"}
-                title={liveMode ? (isMicActive ? "Stop speaking" : "Press to speak (Live)") : (isMicActive ? "Stop" : "Speak")}
-              >
-                <LucideIcon name={isMicActive ? "mic" : "mic-off"} size={20} />
-              </button>
-            )}
-            <button
-              className={`vc-btn${!isMuted ? " is-active" : ""}`}
-              onClick={() =>
-                setIsMuted(m => {
-                  if (!m) stopAll();
-                  return !m;
-                })
-              }
-              aria-label={isMuted ? "Unmute" : "Mute"}
-              title={isMuted ? "Unmute speech" : "Mute speech"}
-            >
-              <LucideIcon name={isMuted ? "volume-x" : "volume-2"} size={20} />
-            </button>
-            <button className="vc-btn is-danger" onClick={handleEndCall} aria-label="End call" title="End call">
-              <LucideIcon name="phone-off" size={20} />
-            </button>
-          </div>
-        )}
+      <div className="p-6 bg-white border-t border-slate-50 space-y-4">
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={handleMicClick}
+            className={`w-12 h-12 !rounded-full flex items-center justify-center  transition-all ${isMicActive ? "bg-[#67a1ff] text-white  shadow-blue-200" : "bg-slate-100 text-slate-400 hover:bg-slate-100"}`}
+          >
+            <LucideIcon name={isMicActive ? "mic" : "mic-off"} size={24} />
+          </button>
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className={`w-12 h-12 !rounded-full  flex items-center justify-center transition-all ${!isMuted ? "bg-indigo-50 text-[#67a1ff]" : "bg-slate-50 text-slate-300"}`}
+          >
+            <LucideIcon name={isMuted ? "volume-x" : "volume-2"} size={24} />
+          </button>
+          <button
+            onClick={handleEndCall}
+            className="w-12 h-12 !rounded-full  flex items-center justify-center bg-red-500 text-white transition-all"
+          >
+            <LucideIcon name="phone-off" size={20} />
+          </button>
+        </div>
 
-        {/* Text input — works in both modes */}
-        <form className="vp-text-input" onSubmit={handleTextSubmit}>
+        <form onSubmit={handleTextSubmit} className="relative group">
           <input
-            className="vp-text-field"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-6 pr-12 text-sm text-slate-700 outline-none focus:ring-4 focus:ring-[#67a1ff0a] focus:border-[#67a1ff50] transition-all"
             type="text"
             value={textInput}
-            onChange={e => setTextInput(e.target.value)}
+            onChange={(e) => setTextInput(e.target.value)}
             placeholder={
               liveMode
-                ? "Or type a question to Live agent…"
+                ? "Ask Gemini Live anything..."
                 : hasSR
-                  ? "Or type a question…"
-                  : "Type a question (speech unavailable in this browser)"
+                  ? "Type or use the mic..."
+                  : "Type your question (Mic unavailable)..."
             }
-            disabled={wsState !== "open"}
-            aria-label="Type your question"
           />
-          <Button variant="primary" size="sm" icon="send" type="submit" disabled={wsState !== "open" || !textInput.trim()}>
-            Send
-          </Button>
+          <button
+            type="submit"
+            disabled={!textInput.trim()}
+            className="absolute right-2 top-2 p-2 !rounded-full text-[#67a1ff] hover:bg-[#67a1ff] hover:text-white transition-all disabled:opacity-20"
+          >
+            <LucideIcon name="send" size={20} />
+          </button>
         </form>
 
-        <Disclaimer style={{ margin: "8px 16px 14px", flex: "none" } as React.CSSProperties} />
+        <div className="flex items-center justify-center gap-2 pt-2 opacity-40">
+          <LucideIcon name="lock" size={12} />
+          <span className="text-[9px] font-black uppercase tracking-widest">
+            Privacy Protected AI Session
+          </span>
+        </div>
       </div>
     </div>
   );

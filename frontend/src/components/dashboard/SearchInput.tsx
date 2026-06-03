@@ -8,13 +8,14 @@ interface SearchInputProps {
 
 export function SearchInput({ value, onChange }: SearchInputProps) {
   return (
-    <div className="search">
+    <div className="search !bg-white border rounded-sm">
       <LucideIcon name="search" size={17} />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search risks…"
         aria-label="Search risks"
+        className=""
       />
       {value && (
         <button

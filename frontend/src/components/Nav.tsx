@@ -1,6 +1,7 @@
 "use client";
-import { LucideIcon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
+import { LucideIcon } from "@/components/ui/Icon";
+import Link from "next/link";
 
 interface NavProps {
   onHome?: () => void;
@@ -9,25 +10,51 @@ interface NavProps {
 
 export function Nav({ onHome, showNewContract }: NavProps) {
   return (
-    <nav className="nav">
-      <div className="wrap" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-        <button className="brand" onClick={onHome} aria-label="Go to home">
-          <span className="brand-mark">
-            <LucideIcon name="shield-check" size={19} color="#fff" />
-          </span>
-          <span className="brand-name">
-            Protect<em>Me</em> AI
+    <nav className="nav px-14 border-b border-gray-200 z-40 bg-white">
+      <div
+        className="wrap"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
+        <button
+          className="group flex items-center gap-2 hover:opacity-90 transition-all duration-300"
+          onClick={onHome}
+          aria-label="Go to home"
+        >
+          <div className="relative w-8 h-8 flex items-center justify-center rounded-xs bg-gradient-to-br from-[#67a1ff] via-[#7aadff] to-cyan-500 shadow-lg shadow-blue-200/50 group-hover:scale-105 transition-transform">
+            <LucideIcon name="shield-check" size={20} color="#fff" />
+            <div className="absolute inset-0 bg-white/10 rounded-[12px] pointer-events-none" />
+          </div>
+
+          <span className="text-xl font-bold tracking-tight text-slate-900">
+            Protect<span className="text-[#67a1ff] italic">Me</span>
+            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-bold uppercase tracking-widest align-top">
+              AI
+            </span>
           </span>
         </button>
 
         <div className="nav-links">
-          <button className="nav-link">How it works</button>
-          <button className="nav-link" style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <LucideIcon name="lock" size={14} />
-            Privacy
-          </button>
+          <Link
+            href="/#how_it_work"
+            className="bg-[#7aadff] text-white px-4 py-2 rounded-xs text-sm"
+          >
+            How it works
+          </Link>
+
           {showNewContract && (
-            <Button variant="secondary" onDark size="sm" icon="plus" onClick={onHome}>
+            <Button
+              variant="secondary"
+              onDark
+              size="sm"
+              icon="plus"
+              onClick={onHome}
+              className="!text-[#67a1ff] !border-[#67a1ff]"
+            >
               New contract
             </Button>
           )}

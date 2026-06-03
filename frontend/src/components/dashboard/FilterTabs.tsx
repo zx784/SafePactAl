@@ -16,10 +16,10 @@ export function FilterTabs({ active, onChange, report }: FilterTabsProps) {
   };
 
   const tabs: { id: FilterTab; label: string; dot: string | null }[] = [
-    { id: "all",    label: "All",    dot: null },
-    { id: "high",   label: "High",   dot: "var(--risk-high)" },
+    { id: "all", label: "All", dot: null },
+    { id: "high", label: "High", dot: "var(--risk-high)" },
     { id: "medium", label: "Medium", dot: "var(--risk-med)" },
-    { id: "low",    label: "Low",    dot: "var(--risk-low)" },
+    { id: "low", label: "Low", dot: "var(--risk-low)" },
   ];
 
   return (
@@ -29,12 +29,14 @@ export function FilterTabs({ active, onChange, report }: FilterTabsProps) {
           key={t.id}
           role="tab"
           aria-selected={active === t.id}
-          className={`ftab ${active === t.id ? "active" : ""}`}
+          className={`ftab !rounded-xs ${active === t.id ? "active" : ""}`}
           onClick={() => onChange(t.id)}
         >
           {t.dot && <span className="ftab-dot" style={{ background: t.dot }} />}
           {t.label}
-          <span className="ftab-ct">{counts[t.id]}</span>
+          <span className="ftab-ct" style={{ color: t.dot }}>
+            {counts[t.id]}
+          </span>
         </button>
       ))}
     </div>

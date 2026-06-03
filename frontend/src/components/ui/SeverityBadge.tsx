@@ -11,7 +11,7 @@ export function SeverityBadge({ severity, label }: SeverityBadgeProps) {
   const cssKey = meta.cssKey;
 
   return (
-    <span className={`pill pill-${cssKey}`}>
+    <span className={`pill pill-${cssKey} rounded-xs`}>
       <LucideIcon name={meta.icon} size={14} />
       {label ?? `${meta.label} risk`}
     </span>

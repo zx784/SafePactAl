@@ -34,7 +34,10 @@ export default function LandingPage() {
     let p = 0;
     const interval = setInterval(() => {
       p += Math.random() * 12 + 5;
-      if (p >= 92) { clearInterval(interval); p = 92; }
+      if (p >= 92) {
+        clearInterval(interval);
+        p = 92;
+      }
       setProgress(Math.round(p));
     }, 300);
     return interval;
@@ -44,7 +47,10 @@ export default function LandingPage() {
     async (file?: File, text?: string) => {
       setIsLoading(true);
       const ticker = fakeProgress();
-      addDebugLine("info", file ? `Uploading: ${file.name}` : "Analyzing pasted contract text…");
+      addDebugLine(
+        "info",
+        file ? `Uploading: ${file.name}` : "Analyzing pasted contract text…",
+      );
 
       try {
         const result = await analyzeContract(file, text);
@@ -52,8 +58,14 @@ export default function LandingPage() {
         setProgress(100);
 
         setSession(result.session_id, result.risk_report);
-        addDebugLine("agent", `Analysis complete — ${result.risk_report.risks.length} risks detected`);
-        addDebugLine("tool", `risk.classify() → overall: ${result.risk_report.overall_risk}`);
+        addDebugLine(
+          "agent",
+          `Analysis complete — ${result.risk_report.risks.length} risks detected`,
+        );
+        addDebugLine(
+          "tool",
+          `risk.classify() → overall: ${result.risk_report.overall_risk}`,
+        );
 
         setTimeout(() => router.push("/dashboard"), 300);
       } catch (err: unknown) {
@@ -62,7 +74,9 @@ export default function LandingPage() {
         setIsLoading(false);
 
         const message =
-          err instanceof Error ? err.message : "Analysis failed. Is the backend running?";
+          err instanceof Error
+            ? err.message
+            : "Analysis failed. Is the backend running?";
         addDebugLine("error", `Analysis failed: ${message}`);
         showToast({
           kind: "error",
@@ -90,40 +104,47 @@ export default function LandingPage() {
   );
 
   return (
-    <div className="app">
+    <div className="app overflow-hidden">
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-50">
+        <div className="absolute top-[-6%] left-[-9%] w-[40%] h-[40%] bg-[#7aadff64] rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-[#67a1ff46] rounded-full blur-[120px]"></div>
+      </div>{" "}
       <Nav />
-
       <main className="wrap landing">
-        <div className="landing-hero">
-          <span className="eyebrow fade-up" style={{ color: "var(--brand-blue)" }}>
-            Contract-risk assistant
+        {/* Hero Section */}
+        <div className="text-center mb-10 space-y-2">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-[#67a1ff10] text-[#333] text-xs font-medium tracking-widest animate-fade-in">
+            Next-Gen Contract Intelligence
           </span>
-          <h1 className="landing-title fade-up">
-            Understand before you sign.
-            <br />
-            <span className="grad">Ask before you agree.</span>
+
+          <h1 className="text-5xl md:text-6xl font-black text-[#252525] tracking-tight leading-[1.1]">
+            Understand before <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7aadff] to-[#67a1ff8f]">
+              you sign
+            </span>
           </h1>
-          <p className="landing-sub fade-up">
-            ProtectMe AI reads your rental, bank, subscription, or service agreement and shows you
-            every risk — in plain language. Then you can ask questions before you commit.
+
+          <p className="max-w-xl mx-auto text-sm pt-2 text-[#333] leading-relaxed">
+            ProtectMe AI analyzes every clause in seconds, highlighting risks in
+            plain language so you can sign with total confidence.
           </p>
         </div>
 
-        <div className="landing-upload fade-up">
-          <div className="upload-tabs">
+        <div className="max-w-5xl mx-auto fade-up">
+          <div className="flex p-1.5 bg-white rounded-full shadow-sm mb-4 max-w-xs mx-auto border border-slate-200">
             <button
-              className={`upload-tab ${tab === "file" ? "active" : ""}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 !rounded-full text-sm font-medium transition-all ${tab === "file" ? "bg-[#7aadff] text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
               onClick={() => setTab("file")}
             >
-              <LucideIcon name="upload-cloud" size={15} />
-              Upload file
+              <LucideIcon name="upload-cloud" size={16} />
+              Upload File
             </button>
             <button
-              className={`upload-tab ${tab === "paste" ? "active" : ""}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 !rounded-full text-sm font-medium transition-all ${tab === "paste" ? "bg-[#7aadff] text-white shadow-md" : "text-slate-400 hover:text-slate-600"}`}
               onClick={() => setTab("paste")}
             >
-              <LucideIcon name="clipboard" size={15} />
-              Paste text
+              <LucideIcon name="clipboard" size={16} />
+              Paste Text
             </button>
           </div>
 
@@ -139,19 +160,23 @@ export default function LandingPage() {
           )}
 
           <div className="privacy-note">
-            <LucideIcon name="lock" size={15} />
-            <span>Your contract stays private. We analyze it to build your report and never sell your data.</span>
+            <LucideIcon name="lock" size={15} color="#64748b" />
+            <span className="text-slate-500">
+              Your contract stays private. We analyze it to build your report
+              and never sell your data.
+            </span>
           </div>
         </div>
 
-        <section className="landing-section">
-          <h2 className="section-h">How it works</h2>
+        <section className="landing-section" id="how_it_work">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-[#252525]">How it works</h2>
+            <div className="h-1.5 w-14 bg-[#7aadff] mx-auto mt-4 rounded-full"></div>
+          </div>
           <HowItWorks />
         </section>
-
-        <Disclaimer style={{ margin: "8px 0 40px" }} />
       </main>
-
+      <Disclaimer />
       <Toast toast={toast} />
     </div>
   );

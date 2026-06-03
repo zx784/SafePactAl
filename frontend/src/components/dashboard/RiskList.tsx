@@ -24,11 +24,15 @@ export function RiskList({
   onGenerate,
 }: RiskListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(
-    risks.length > 0 ? risks[0].id : null,
+    risks.length > 0 ? null : null,
   );
 
   const sorted = useMemo(
-    () => [...risks].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3)),
+    () =>
+      [...risks].sort(
+        (a, b) =>
+          (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3),
+      ),
     [risks],
   );
 
@@ -47,8 +51,8 @@ export function RiskList({
 
   if (visible.length === 0) {
     return (
-      <div className="empty">
-        <LucideIcon name="search-x" size={28} />
+      <div className="empty flex flex-col justify-center items-center ">
+        <LucideIcon name="search-x" size={48} color="#333" />
         <h3>No risks match</h3>
         <p>Try a different filter or search term.</p>
       </div>
@@ -56,7 +60,7 @@ export function RiskList({
   }
 
   return (
-    <div className="risklist">
+    <div className="risklist w-full">
       {visible.map((r) => (
         <RiskCard
           key={r.id}
