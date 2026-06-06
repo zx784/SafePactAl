@@ -244,7 +244,7 @@ export default function DashboardPage() {
                       size={15}
                       className={pdfLoading ? "animate-spin" : ""}
                     />
-                    {pdfLoading ? "Preparing PDF…" : "Download PDF Report"}
+                    {pdfLoading ? t("preparing_pdf") : t("download_pdf")}
                   </button>
                   <SeverityBadge severity={riskReport.overall_risk} />
                 </div>

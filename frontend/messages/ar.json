@@ -90,13 +90,16 @@
       "medium": "متوسطة",
       "low": "منخفضة",
       "search_placeholder": "ابحث في المخاطر..."
-    }
+    },
+    "download_pdf": "تحميل تقرير PDF",
+    "preparing_pdf": "جارٍ تجهيز PDF…"
   },
   "Severity": {
-    "high": "عالية",
-    "medium": "متوسطة",
-    "low": "منخفضة",
-    "risk_suffix": "خطورة"
+    "high": "عالي",
+    "medium": "متوسط",
+    "low": "منخفض",
+    "minimal": "ضئيل",
+    "risk_suffix": ""
   },
   "RiskList": {
     "empty_title": "لا توجد مخاطر مطابقة",

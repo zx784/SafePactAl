@@ -90,12 +90,15 @@
       "medium": "Medium",
       "low": "Low",
       "search_placeholder": "Search risks..."
-    }
+    },
+    "download_pdf": "Download PDF Report",
+    "preparing_pdf": "Preparing PDF…"
   },
   "Severity": {
     "high": "High",
     "medium": "Medium",
     "low": "Low",
+    "minimal": "Minimal",
     "risk_suffix": "risk"
   },
   "RiskList": {
