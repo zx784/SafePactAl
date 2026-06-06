@@ -57,6 +57,14 @@ def _mock_gemini(draft_text: str = "مسودة عربية."):
     return mock
 
 
+def _mock_gemini_sequence(*drafts: str):
+    """Mock whose generate() returns each draft in turn (for retry tests)."""
+    mock = MagicMock()
+    mock.conversation_model = "gemini-3.5-flash"
+    mock.generate = AsyncMock(side_effect=list(drafts))
+    return mock
+
+
 # ── REST generate-message X-Language (Issue 1) ─────────────────────────────────
 
 class TestGenerateMessageLanguage:
@@ -81,8 +89,31 @@ class TestGenerateMessageLanguage:
         resp = self._post(_make_session(), mock_client, headers={"X-Language": "ar"})
         assert resp.status_code == 200
         prompt = mock_client.generate.call_args.kwargs["prompt"]
-        assert "العربية" in prompt          # Arabic directive present
-        assert "email" in prompt.lower()    # chosen format still respected
+        assert "العربية" in prompt              # Arabic directive present
+        assert "LANGUAGE REQUIREMENT" in prompt # strong, prominent directive
+        assert "الموضوع:" in prompt             # Arabic subject label, not "Subject:"
+        assert "email" in prompt.lower()        # chosen format still respected
+
+    def test_arabic_email_format_uses_arabic_subject_label(self):
+        # Arabic + email: the prompt must steer the subject to "الموضوع:" (not English).
+        mock_client = _mock_gemini()
+        resp = self._post(_make_session(), mock_client,
+                          headers={"X-Language": "ar"}, format="email")
+        assert resp.status_code == 200
+        prompt = mock_client.generate.call_args.kwargs["prompt"]
+        assert "الموضوع:" in prompt
+        assert "البريد الإلكتروني" in prompt  # localized email guideline
+
+    def test_arabic_whatsapp_format_is_arabic(self):
+        # Arabic + WhatsApp: localized WhatsApp guideline + Arabic directive.
+        mock_client = _mock_gemini()
+        resp = self._post(_make_session(), mock_client,
+                          headers={"X-Language": "ar"}, format="whatsapp")
+        assert resp.status_code == 200
+        prompt = mock_client.generate.call_args.kwargs["prompt"]
+        assert "العربية" in prompt
+        assert "واتساب" in prompt             # localized WhatsApp guideline
+        assert "whatsapp" in prompt.lower()   # chosen format still respected
 
     def test_arabic_header_preserves_custom_details(self):
         mock_client = _mock_gemini()
@@ -102,7 +133,9 @@ class TestGenerateMessageLanguage:
         resp = self._post(_make_session(), mock_client)  # no X-Language header
         assert resp.status_code == 200
         prompt = mock_client.generate.call_args.kwargs["prompt"]
-        assert "العربية" not in prompt       # English unchanged
+        assert "العربية" not in prompt          # English unchanged
+        assert "LANGUAGE REQUIREMENT" not in prompt
+        assert "Subject line" in prompt         # English format guideline intact
 
     def test_english_header_has_no_arabic_directive(self):
         mock_client = _mock_gemini("English draft.")
@@ -110,6 +143,59 @@ class TestGenerateMessageLanguage:
         assert resp.status_code == 200
         prompt = mock_client.generate.call_args.kwargs["prompt"]
         assert "العربية" not in prompt
+
+    def test_arabic_english_draft_triggers_one_retry(self):
+        # Model returns an English "Subject:" draft first → service retries once and
+        # the Arabic second attempt wins. (Acceptance: no English "Subject:" survives.)
+        mock_client = _mock_gemini_sequence(
+            "Subject: Clarification Request\n\nDear Landlord, ...",
+            "الموضوع: طلب توضيح\n\nمرحباً، أود الاستفسار عن بنود العقد ...",
+        )
+        resp = self._post(_make_session(), mock_client, headers={"X-Language": "ar"})
+        assert resp.status_code == 200
+        assert mock_client.generate.await_count == 2          # retried exactly once
+        draft = resp.json()["draft"]
+        assert "الموضوع:" in draft and "Subject:" not in draft  # Arabic draft won
+
+    def test_arabic_draft_already_arabic_no_retry(self):
+        # Model returns Arabic on the first attempt → no wasteful retry.
+        mock_client = _mock_gemini("الموضوع: طلب توضيح\n\nمرحباً ...")
+        resp = self._post(_make_session(), mock_client, headers={"X-Language": "ar"})
+        assert resp.status_code == 200
+        assert mock_client.generate.await_count == 1
+
+    def test_english_never_retries(self):
+        # English draft for an English request must not trigger the Arabic retry.
+        mock_client = _mock_gemini("Subject: Clarification Request\n\nDear Landlord, ...")
+        resp = self._post(_make_session(), mock_client, headers={"X-Language": "en"})
+        assert resp.status_code == 200
+        assert mock_client.generate.await_count == 1
+
+
+# ── Prompt builder + Arabic-detection units ────────────────────────────────────
+
+class TestPromptBuilderLanguage:
+    def test_build_prompt_arabic_vs_english(self):
+        from protectme_agent.prompts.message_generation_prompt import build_message_prompt
+        ar = build_message_prompt(
+            risk_summaries=["Deposit"], clause_texts=["x"],
+            message_type="clarification", tone="polite", format="email",
+            language="ar",
+        )
+        en = build_message_prompt(
+            risk_summaries=["Deposit"], clause_texts=["x"],
+            message_type="clarification", tone="polite", format="email",
+            language="en",
+        )
+        assert "العربية" in ar and "الموضوع:" in ar
+        assert "العربية" not in en and "Subject line" in en
+
+    def test_has_arabic_helper(self):
+        from app.services.message_service import _has_arabic
+        assert _has_arabic("مرحباً")
+        assert _has_arabic("الموضوع: طلب")
+        assert not _has_arabic("Subject: Clarification Request")
+        assert not _has_arabic("")
 
 
 # ── Arabic PDF voice command → download_pdf event (Issue 2) ────────────────────
