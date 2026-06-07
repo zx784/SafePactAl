@@ -31,23 +31,25 @@ We discovered that achieving sub-second latency for a conversational voice agent
 
 N/A — The core intelligence and voice capabilities are entirely built utilizing the Google Cloud and Gemini ecosystem.
 
+```mermaid
 graph TD
-    A[User] -->|Uploads PDF / DOCX / TXT or pastes text| B(SafePact Frontend)
-    B -->|Sends data · REST + voice WebSocket| C(FastAPI Backend)
+    A["User"] -->|"Uploads PDF / DOCX / TXT or pastes text"| B("SafePact Frontend")
+    B -->|"Sends data — REST + voice WebSocket"| C("FastAPI Backend")
 
-    C -->|Extracts text| E[Text Extraction<br/>PDF · DOCX · TXT]
-    E -->|Clean contract text| D{Gemini AI Models}
-    D -->|Returns structured risk report| C
+    C -->|"Extracts text"| E["Text Extraction<br/>PDF · DOCX · TXT"]
+    E -->|"Clean contract text"| D{"Gemini AI Models"}
+    D -->|"Returns structured risk report"| C
 
-    C -->|Questions · clause explanations · drafts| G[Conversation Agent<br/>intent routing + fast paths]
-    G <-->|Reasoning| D
-    G -->|Answer text| F[/Google Cloud TTS<br/>Journey voice · AR & EN/]
-    F -->|Sub-second audio| C
+    C -->|"Questions · explanations · drafts"| G["Conversation Agent<br/>intent routing + fast paths"]
+    G <-->|"Reasoning"| D
+    G -->|"Answer text"| F["Google Cloud TTS<br/>Journey voice · AR and EN"]
+    F -->|"Sub-second audio"| C
 
-    C -->|Builds report file| H[PDF Report Generator<br/>ReportLab]
-    H -->|Downloadable PDF scan report| C
+    C -->|"Builds report file"| H["PDF Report Generator<br/>ReportLab"]
+    H -->|"Downloadable PDF scan report"| C
 
-    C --- I[(In-memory Session Store)]
+    C --- I[("In-memory Session Store")]
 
-    C -->|Risk dashboard · drafts · streamed voice · PDF| B
-    B -->|Displays results & speaks answers| A
+    C -->|"Risk dashboard · drafts · streamed voice · PDF"| B
+    B -->|"Displays results and speaks answers"| A
+```
