@@ -32,6 +32,82 @@ def _has_arabic(text: str) -> bool:
     return any("؀" <= ch <= "ۿ" for ch in (text or ""))
 
 
+# English email/letter scaffolding that must NEVER appear in an Arabic draft.
+_ENGLISH_TEMPLATE_MARKERS = (
+    "subject:", "dear ", "best regards", "kind regards", "warm regards",
+    "i hope this email finds you well", "to whom it may concern",
+    "sincerely,", "clarification request", "yours faithfully",
+)
+
+
+def _is_acceptable_arabic(text: str) -> bool:
+    """An Arabic draft must contain Arabic characters AND avoid English template
+    scaffolding (Subject:, Dear, Best regards, …)."""
+    if not _has_arabic(text):
+        return False
+    low = (text or "").lower()
+    return not any(marker in low for marker in _ENGLISH_TEMPLATE_MARKERS)
+
+
+# Deterministic Arabic message templates — used only as a last-resort fallback if
+# the model fails to produce Arabic after a retry. Guarantees the dashboard never
+# shows an English draft in Arabic mode.
+_AR_SUBJECT = {
+    "clarification": "طلب توضيح بخصوص بنود العقد",
+    "negotiation": "طلب التفاوض بشأن بعض بنود العقد",
+    "rejection": "تحفّظات على بعض بنود العقد",
+    "amendment_request": "طلب تعديل بعض بنود العقد",
+}
+_AR_OPENING = {
+    "clarification": "أكتب إليكم لطلب توضيح بخصوص بعض البنود في العقد:",
+    "negotiation": "أكتب إليكم لمناقشة بعض البنود في العقد والتفاوض بشأنها:",
+    "rejection": "أكتب إليكم لإبداء بعض التحفّظات على بنود في العقد:",
+    "amendment_request": "أكتب إليكم لطلب تعديل بعض البنود في العقد:",
+}
+
+
+def _arabic_fallback_draft(selected, message_type, tone, format, extra_instruction):
+    """Build a deterministic Arabic draft from the selected risks (no model call)."""
+    subject = _AR_SUBJECT.get(message_type, _AR_SUBJECT["clarification"])
+    opening = _AR_OPENING.get(message_type, _AR_OPENING["clarification"])
+    bullets = [
+        f"- {r.get('title', '').strip()}: {r.get('simple_explanation', '').strip()}".rstrip(": ")
+        for r in selected
+    ]
+    note = f"ملاحظة إضافية: {extra_instruction.strip()}" if extra_instruction else ""
+    closing_request = (
+        "أتوقّع توضيح هذه النقاط أو تعديلها قبل المتابعة."
+        if str(tone).lower() == "firm"
+        else "أرجو منكم التكرّم بتوضيح هذه النقاط أو إعادة النظر فيها قبل المتابعة."
+    )
+
+    if str(format).lower() == "whatsapp":
+        # Short, conversational — no subject line or formal headers.
+        titles = "، ".join(r.get("title", "").strip() for r in selected if r.get("title"))
+        parts = [f"مرحباً، {opening}"]
+        if titles:
+            parts.append(titles + ".")
+        if note:
+            parts.append(note + ".")
+        parts.append("هل يمكن توضيح ذلك أو إعادة النظر فيه؟ شكراً لك.")
+        return " ".join(parts)
+
+    # Email — Arabic subject, greeting, body, closing.
+    lines = [
+        f"الموضوع: {subject}",
+        "",
+        "مرحباً [اسم المستلم]،",
+        "",
+        opening,
+        "",
+        *bullets,
+    ]
+    if note:
+        lines += ["", note]
+    lines += ["", closing_request, "", "مع خالص التحية،", "[اسمك]"]
+    return "\n".join(lines)
+
+
 def _build_gemini_client():
     """Create a GeminiClient using current settings."""
     from protectme_agent.gemini_client import GeminiClient
@@ -109,11 +185,13 @@ class MessageService:
 
         try:
             draft = await _generate(extra_instruction)
-            # Safety net: Arabic requested but the model returned no Arabic at all
-            # (e.g. an English "Subject:" draft). Retry once with a blunt directive.
-            if lang == "ar" and not _has_arabic(draft):
+            # Arabic guarantee: the draft must be Arabic with no English email
+            # scaffolding ("Subject:", "Dear", "Best regards"). If not, retry once
+            # with a blunt directive; if it still fails, fall back to a deterministic
+            # Arabic draft so the dashboard never shows English in Arabic mode.
+            if lang == "ar" and not _is_acceptable_arabic(draft):
                 logger.warning(
-                    "[MessageService] Arabic requested but draft had no Arabic; retrying once."
+                    "[MessageService] Arabic requested but draft looked English; retrying once."
                 )
                 retry_extra = " ".join(
                     p for p in (
@@ -125,6 +203,17 @@ class MessageService:
                     ) if p
                 )
                 draft = await _generate(retry_extra)
+                if not _is_acceptable_arabic(draft):
+                    logger.warning(
+                        "[MessageService] Retry still not Arabic; using deterministic Arabic fallback."
+                    )
+                    draft = _arabic_fallback_draft(
+                        selected,
+                        request.message_type.value,
+                        request.tone.value,
+                        request.format.value,
+                        extra_instruction,
+                    )
         except Exception as exc:
             logger.error("[MessageService] Generation failed: %s", exc)
             raise MessageGenerationError(str(exc)) from exc

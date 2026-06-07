@@ -8,7 +8,7 @@ import type {
   MessageType,
   RiskItem,
 } from "@/lib/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 
 interface MessagePanelProps {
@@ -51,6 +51,7 @@ export function MessagePanel({
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const t = useTranslations("MessagePanel");
+  const locale = useLocale(); // website language → draft language
 
   const selectedRisks = risks.filter((r) => riskIds.includes(r.id));
   const renderOptionLabel = (val: string) => t(`options.${val}`);
@@ -58,15 +59,19 @@ export function MessagePanel({
   const callGenerate = useCallback(
     async (extraInstruction?: string) => {
       setIsLoading(true);
+      onDebugLine("info", `Generate message language=${locale}`);
       try {
-        const result = await generateMessage({
-          session_id: sessionId,
-          clause_ids: riskIds,
-          message_type: messageType,
-          tone,
-          format,
-          extra_instruction: extraInstruction,
-        });
+        const result = await generateMessage(
+          {
+            session_id: sessionId,
+            clause_ids: riskIds,
+            message_type: messageType,
+            tone,
+            format,
+            extra_instruction: extraInstruction,
+          },
+          locale,
+        );
         setDraft(result.draft);
         onDebugLine("agent", "Draft generated successfully");
       } catch (err) {
@@ -75,7 +80,7 @@ export function MessagePanel({
         setIsLoading(false);
       }
     },
-    [sessionId, riskIds, messageType, tone, format, onDebugLine],
+    [sessionId, riskIds, messageType, tone, format, locale, onDebugLine],
   );
 
   const handleCopy = useCallback(async () => {

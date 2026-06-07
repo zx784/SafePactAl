@@ -18,7 +18,10 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  if (typeof document !== "undefined") {
+  // Respect an explicit per-request X-Language (e.g. Generate Message passes the
+  // next-intl locale directly). Only fall back to the <html lang> attribute when
+  // the caller didn't set one — that attribute can lag during soft navigation.
+  if (typeof document !== "undefined" && !config.headers["X-Language"]) {
     const locale = document.documentElement.lang || "en";
     config.headers["X-Language"] = locale;
   }
@@ -41,10 +44,14 @@ export async function analyzeContract(
 
 export async function generateMessage(
   req: GenerateMessageRequest,
+  language?: string,
 ): Promise<GenerateMessageResponse> {
+  // The draft language follows the website language. Pass it explicitly so it
+  // never depends on the (possibly stale) <html lang> attribute.
   const { data } = await api.post<GenerateMessageResponse>(
     "/api/actions/generate-message",
     req,
+    language ? { headers: { "X-Language": language } } : undefined,
   );
   return data;
 }

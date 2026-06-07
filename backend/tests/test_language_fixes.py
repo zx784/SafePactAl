@@ -65,6 +65,11 @@ def _mock_gemini_sequence(*drafts: str):
     return mock
 
 
+def _contains_arabic(text: str) -> bool:
+    """True if the text has any Arabic character (test-side mirror of _has_arabic)."""
+    return any("؀" <= ch <= "ۿ" for ch in (text or ""))
+
+
 # ── REST generate-message X-Language (Issue 1) ─────────────────────────────────
 
 class TestGenerateMessageLanguage:
@@ -196,6 +201,147 @@ class TestPromptBuilderLanguage:
         assert _has_arabic("الموضوع: طلب")
         assert not _has_arabic("Subject: Clarification Request")
         assert not _has_arabic("")
+
+    def test_is_acceptable_arabic_rejects_english_markers(self):
+        from app.services.message_service import _is_acceptable_arabic
+        # Arabic but with English scaffolding leaking in → not acceptable.
+        assert not _is_acceptable_arabic("Subject: طلب\n\nمرحباً")
+        assert not _is_acceptable_arabic("مرحباً\nDear Landlord")
+        assert not _is_acceptable_arabic("English only, no Arabic.")
+        # Clean Arabic (English name placeholders are allowed) → acceptable.
+        assert _is_acceptable_arabic("الموضوع: طلب توضيح\n\nمرحباً [اسم المستلم]،")
+
+
+# ── Real dashboard request: Arabic output is guaranteed (Issue, attempt 3) ─────
+# An English report content + Arabic UI must still yield an Arabic draft, even if
+# the model returns English — the deterministic fallback enforces it.
+
+AR_REPORT = {
+    "contract_type": "اتفاقية إيجار",
+    "overall_risk": "High",
+    "final_recommendation": "Do Not Sign Yet",
+    "summary": "بنود مجحفة.",
+    "confidence": 0.9,
+    "risks": [
+        {"id": "risk_001", "title": "مصادرة الوديعة", "severity": "High",
+         "category": "Deposit", "clause_text": "مصادرة الوديعة.",
+         "simple_explanation": "تفقد وديعتك.", "why_it_matters": "مكلف.",
+         "question_to_ask": "هل يمكن التقسيط؟", "suggested_action": "تفاوض"},
+    ],
+    "missing_information": [], "recommended_questions": [],
+}
+
+
+def _make_ar_report_session() -> str:
+    s = Session(risk_report=AR_REPORT, contract_text="عقد")
+    session_repository.create(s)
+    return s.session_id
+
+
+def _post_generate(sid, mock_client, headers=None, **body_overrides):
+    body = {
+        "session_id": sid,
+        "clause_ids": ["risk_001"],
+        "message_type": "clarification",
+        "tone": "polite",
+        "format": "email",
+    }
+    body.update(body_overrides)
+    with patch("app.services.message_service._build_gemini_client",
+               return_value=mock_client):
+        return client.post("/api/actions/generate-message",
+                           json=body, headers=headers or {})
+
+
+_EN_EMAIL = "Subject: Clarification Request\n\nDear Landlord,\nI hope this email finds you well.\n\nBest regards,\n[Your Name]"
+
+
+class TestArabicOutputGuarantee:
+    def test_arabic_email_output_is_arabic_even_if_model_returns_english(self):
+        # Model returns English twice → deterministic Arabic email fallback.
+        mock_client = _mock_gemini_sequence(_EN_EMAIL, _EN_EMAIL)
+        resp = _post_generate(_make_session(), mock_client,
+                              headers={"X-Language": "ar"}, format="email")
+        assert resp.status_code == 200
+        draft = resp.json()["draft"]
+        assert _contains_arabic(draft)        # output is Arabic
+        assert "الموضوع:" in draft            # Arabic subject label
+        assert "Subject:" not in draft        # no English subject
+        assert "Dear" not in draft            # no English greeting
+        assert "Best regards" not in draft    # no English closing
+        assert mock_client.generate.await_count == 2  # tried + retried, then fallback
+
+    def test_arabic_whatsapp_output_is_arabic_no_subject(self):
+        mock_client = _mock_gemini_sequence(_EN_EMAIL, _EN_EMAIL)
+        resp = _post_generate(_make_session(), mock_client,
+                              headers={"X-Language": "ar"}, format="whatsapp")
+        assert resp.status_code == 200
+        draft = resp.json()["draft"]
+        assert _contains_arabic(draft)
+        assert "Subject:" not in draft and "الموضوع:" not in draft  # no subject line
+        assert "Dear" not in draft
+
+    def test_arabic_email_passthrough_when_model_returns_arabic(self):
+        # Good Arabic from the model is returned as-is (no fallback, no extra calls).
+        good = "الموضوع: طلب توضيح\n\nمرحباً [اسم المستلم]،\nأود الاستفسار...\n\nمع خالص التحية،\n[اسمك]"
+        mock_client = _mock_gemini(good)
+        resp = _post_generate(_make_session(), mock_client, headers={"X-Language": "ar"})
+        assert resp.status_code == 200
+        assert resp.json()["draft"] == good
+        assert mock_client.generate.await_count == 1
+
+    def test_english_email_output_is_english(self):
+        mock_client = _mock_gemini(_EN_EMAIL)
+        resp = _post_generate(_make_session(), mock_client,
+                              headers={"X-Language": "en"}, format="email")
+        assert resp.status_code == 200
+        draft = resp.json()["draft"]
+        assert draft == _EN_EMAIL          # English structure allowed, unchanged
+        assert mock_client.generate.await_count == 1  # never retries for English
+
+    def test_arabic_ui_english_contract_outputs_arabic(self):
+        # English report content + Arabic UI → Arabic draft (website language wins).
+        mock_client = _mock_gemini_sequence(_EN_EMAIL, _EN_EMAIL)
+        resp = _post_generate(_make_session(), mock_client, headers={"X-Language": "ar"})
+        assert resp.status_code == 200
+        assert _contains_arabic(resp.json()["draft"])
+
+    def test_english_ui_arabic_contract_outputs_english(self):
+        # Arabic report content + English UI → English draft (website language wins).
+        mock_client = _mock_gemini(_EN_EMAIL)
+        resp = _post_generate(_make_ar_report_session(), mock_client,
+                              headers={"X-Language": "en"})
+        assert resp.status_code == 200
+        assert resp.json()["draft"] == _EN_EMAIL
+        assert mock_client.generate.await_count == 1  # no Arabic forcing
+
+    def test_arabic_custom_detail_preserved_in_prompt_and_output(self):
+        good = "الموضوع: طلب توضيح\n\nمرحباً،\nلدي أسد في المنزل ولذلك...\n\nمع خالص التحية،"
+        mock_client = _mock_gemini(good)
+        resp = _post_generate(_make_session(), mock_client, headers={"X-Language": "ar"},
+                              extra_instruction="لدي أسد")
+        assert resp.status_code == 200
+        prompt = mock_client.generate.call_args.kwargs["prompt"]
+        assert "أسد" in prompt                 # custom detail reached the model
+        assert "أسد" in resp.json()["draft"]   # and survives in the output
+
+    def test_arabic_custom_detail_preserved_in_fallback(self):
+        # Even the deterministic fallback keeps the user's custom detail.
+        mock_client = _mock_gemini_sequence(_EN_EMAIL, _EN_EMAIL)
+        resp = _post_generate(_make_session(), mock_client, headers={"X-Language": "ar"},
+                              extra_instruction="لدي أسد")
+        assert resp.status_code == 200
+        draft = resp.json()["draft"]
+        assert _contains_arabic(draft) and "أسد" in draft
+
+    def test_english_custom_detail_preserved(self):
+        mock_client = _mock_gemini("Subject: Inquiry\n\nDear Landlord, I have a lion at home...")
+        resp = _post_generate(_make_session(), mock_client, headers={"X-Language": "en"},
+                              extra_instruction="I have a lion")
+        assert resp.status_code == 200
+        prompt = mock_client.generate.call_args.kwargs["prompt"]
+        assert "I have a lion" in prompt
+        assert "lion" in resp.json()["draft"]
 
 
 # ── Arabic PDF voice command → download_pdf event (Issue 2) ────────────────────
