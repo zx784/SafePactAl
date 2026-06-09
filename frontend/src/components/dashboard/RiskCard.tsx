@@ -161,6 +161,31 @@ export function RiskCard({
                 {risk.why_it_matters}
               </p>
             </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-green-500">
+                <LucideIcon name="help-circle" size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {t("question_to_ask")}
+                </span>
+              </div>
+              <p className="text-sm text-[#333] leading-relaxed">
+                {coalesce(risk.question_to_ask, t("question_to_ask_fallback"))}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-fuchsia-500">
+                <LucideIcon name="lightbulb" size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {t("suggested_action")}
+                </span>
+              </div>
+              <p className="text-sm text-[#333] leading-relaxed">
+                {coalesce(
+                  risk.suggested_action,
+                  t("suggested_action_fallback"),
+                )}
+              </p>
+            </div>
           </div>
 
           <div className="pt-4 border-t border-slate-50 flex flex-wrap items-center justify-between gap-4">
